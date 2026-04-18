@@ -723,12 +723,8 @@
       setTheme(theme === 'dark' ? 'light' : 'dark');
     });
 
-    document.getElementById('refreshBtn').addEventListener('click', async () => {
-      document.getElementById('loader').style.display = 'flex';
-      showLoaderSpinner(true);
-      await loadApp();
-      showLoaderSpinner(false);
-      document.getElementById('loader').style.display = 'none';
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      location.reload();
     });
 
     document.getElementById('continueBtn').addEventListener('click', async () => {

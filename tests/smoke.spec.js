@@ -30,12 +30,12 @@ test('demo button loads sample data and hides loader', async ({ page }) => {
   await expect(page.locator('#vehicleSelect')).toContainText('Wrangler Demo');
 });
 
-test('refresh button shows loader overlay and reloads', async ({ page }) => {
+test('refresh button reloads page to loader', async ({ page }) => {
   await page.goto('/');
   await page.click('#continueBtn');
   await expect(page.locator('#loader')).toBeHidden();
   await page.click('#refreshBtn');
+  // Page reloads, loader should be visible again
   await expect(page.locator('#loader')).toBeVisible();
-  await expect(page.locator('#loader')).toBeHidden();
-  await expect(page.locator('#vehicleSelect')).toBeVisible();
+  await expect(page.locator('#continueBtn')).toBeVisible();
 });
