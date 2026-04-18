@@ -773,13 +773,6 @@
       document.getElementById('loader').style.display = 'none';
     });
 
-    document.getElementById('demoBtn').addEventListener('click', async () => {
-      showLoaderSpinner(true);
-      await seedDemoData();
-      await loadApp();
-      document.getElementById('loader').style.display = 'none';
-    });
-
     document.getElementById('demoSUVBtn').addEventListener('click', async () => {
       showLoaderSpinner(true);
       await seedDemoSUV();
@@ -917,16 +910,44 @@
       const demoVehicle = { id: crypto.randomUUID(), nickname: 'Wrangler Demo', make: 'Jeep', model: 'Wrangler', year: 2022, trim: 'Rubicon', color: 'Orange', vin: 'DEMOWRANG123', plate: 'DEMO1', purchaseDate: '2023-01-01', odometer: 15200, createdAt: new Date(), updatedAt: new Date() };
       await db.add('vehicles', demoVehicle);
       const demoMaintenance = [
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-03-10', odometer: 14800, type: 'Oil change', shop: true, cost: 120, notes: 'Synthetic oil change at dealer' }
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-06-15', odometer: 12000, type: 'Oil change', shop: true, cost: 85, notes: 'First oil change at dealer' },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-09-20', odometer: 12800, type: 'Tire rotation', shop: false, cost: 0, notes: 'DIY tire rotation' },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-12-10', odometer: 13500, type: 'Oil change', shop: true, cost: 95, notes: 'Winter oil change' },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-02-14', odometer: 14200, type: 'Brake pads', shop: true, cost: 180, notes: 'Front brake pads replacement' },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-03-10', odometer: 14800, type: 'Oil change', shop: true, cost: 120, notes: 'Synthetic oil change at dealer' },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-05-22', odometer: 15500, type: 'Air filter', shop: false, cost: 25, notes: 'DIY air filter replacement' },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-07-18', odometer: 16200, type: 'Tire replacement', shop: true, cost: 450, notes: 'All-terrain tires for better traction' }
       ];
       for (const entry of demoMaintenance) await db.add('maintenance', entry);
       const demoFuel = [
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-05-01', odometer: 15000, gallons: 12, cost: 45, station: 'Fuel Stop', fullTank: true, octane: 87 },
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-06-05', odometer: 15200, gallons: 11.5, cost: 43, station: 'Shell', fullTank: true, octane: 87 }
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-07-01', odometer: 12200, gallons: 11.8, cost: 42, station: 'Shell', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-07-15', odometer: 12450, gallons: 12.2, cost: 44, station: 'BP', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-08-01', odometer: 12680, gallons: 11.9, cost: 43, station: 'Exxon', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-08-20', odometer: 12920, gallons: 12.1, cost: 45, station: 'Chevron', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-09-10', odometer: 13150, gallons: 11.7, cost: 42, station: 'Mobil', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-10-05', odometer: 13380, gallons: 12.3, cost: 46, station: 'Shell', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-10-25', odometer: 13620, gallons: 11.8, cost: 43, station: 'BP', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-11-15', odometer: 13850, gallons: 12.0, cost: 44, station: 'Exxon', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-12-08', odometer: 14080, gallons: 11.9, cost: 43, station: 'Chevron', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-01-02', odometer: 14310, gallons: 12.2, cost: 45, station: 'Mobil', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-01-25', odometer: 14540, gallons: 11.8, cost: 42, station: 'Shell', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-02-20', odometer: 14770, gallons: 12.1, cost: 44, station: 'BP', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-03-15', odometer: 15000, gallons: 12, cost: 45, station: 'Fuel Stop', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-04-10', odometer: 15230, gallons: 11.7, cost: 43, station: 'Exxon', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-05-05', odometer: 15460, gallons: 12.3, cost: 46, station: 'Chevron', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-06-01', odometer: 15690, gallons: 11.9, cost: 44, station: 'Mobil', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-06-25', odometer: 15920, gallons: 12.1, cost: 45, station: 'Shell', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-07-20', odometer: 16150, gallons: 11.8, cost: 43, station: 'BP', fullTank: true, octane: 87 }
       ];
       for (const entry of demoFuel) await db.add('fuel', entry);
       const demoMods = [
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-02-01', category: 'Suspension', part: 'Lift Kit', brand: 'Rubicon Express', cost: 1900, installedBy: 'Shop', notes: 'Improved clearance', installed: true }
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-04-01', category: 'Suspension', part: 'Lift Kit', brand: 'Rubicon Express', cost: 1900, installedBy: 'Shop', notes: '2.5" lift for better ground clearance', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-05-15', category: 'Tires/Wheels', part: 'All-Terrain Tires', brand: 'BFGoodrich', cost: 1200, installedBy: 'Shop', notes: '33" KO2 tires for off-road capability', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-06-01', category: 'Armor', part: 'Rock Rails', brand: 'ARB', cost: 850, installedBy: 'Shop', notes: 'Full length rock protection', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-08-20', category: 'Lighting', part: 'LED Light Bar', brand: 'Rigid Industries', cost: 650, installedBy: 'DIY', notes: '30" LED bar for night driving', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-10-10', category: 'Recovery', part: 'Winch', brand: 'Warn', cost: 1100, installedBy: 'Shop', notes: '9500lb winch with synthetic rope', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-01-05', category: 'Interior', part: 'Seat Covers', brand: 'WeatherTech', cost: 180, installedBy: 'DIY', notes: 'All-weather seat protection', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-03-01', category: 'Electrical', part: 'Aux Battery', brand: 'Optima', cost: 220, installedBy: 'DIY', notes: 'Secondary battery for accessories', installed: true }
       ];
       for (const entry of demoMods) await db.add('mods', entry);
     }
@@ -939,15 +960,46 @@
       const demoVehicle = { id: crypto.randomUUID(), nickname: 'Gladiator Demo', make: 'Jeep', model: 'Gladiator', year: 2023, trim: 'Overland', color: 'Gray', vin: 'DEMGLAD123', plate: 'DEMO2', purchaseDate: '2023-03-01', odometer: 9800, createdAt: new Date(), updatedAt: new Date() };
       await db.add('vehicles', demoVehicle);
       const demoMaintenance = [
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-04-15', odometer: 9600, type: 'Tire rotation', shop: false, cost: 0, notes: 'DIY rotation' }
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-06-01', odometer: 8500, type: 'Oil change', shop: true, cost: 95, notes: 'First service at dealer' },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-08-15', odometer: 8900, type: 'Tire rotation', shop: false, cost: 0, notes: 'DIY tire rotation' },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-11-20', odometer: 9200, type: 'Oil change', shop: true, cost: 105, notes: 'Regular maintenance' },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-01-10', odometer: 9500, type: 'Brake fluid', shop: true, cost: 75, notes: 'Brake fluid flush' },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-04-15', odometer: 9600, type: 'Tire rotation', shop: false, cost: 0, notes: 'DIY rotation' },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-06-08', odometer: 10200, type: 'Cabin filter', shop: false, cost: 15, notes: 'DIY cabin air filter replacement' },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-08-12', odometer: 10800, type: 'Inspection', shop: true, cost: 120, notes: 'Annual safety inspection' }
       ];
       for (const entry of demoMaintenance) await db.add('maintenance', entry);
-      // No fuel for truck demo, or add some
       const demoFuel = [
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-05-01', odometer: 10000, gallons: 15, cost: 60, station: 'Fuel Stop', fullTank: true, octane: 87 }
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-05-01', odometer: 8200, gallons: 14.8, cost: 58, station: 'Shell', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-05-20', odometer: 8450, gallons: 15.2, cost: 59, station: 'BP', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-06-10', odometer: 8700, gallons: 14.9, cost: 57, station: 'Exxon', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-07-01', odometer: 8950, gallons: 15.1, cost: 58, station: 'Chevron', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-07-25', odometer: 9200, gallons: 14.7, cost: 56, station: 'Mobil', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-08-15', odometer: 9450, gallons: 15.3, cost: 59, station: 'Shell', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-09-08', odometer: 9700, gallons: 14.8, cost: 57, station: 'BP', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-10-02', odometer: 9950, gallons: 15.0, cost: 58, station: 'Exxon', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-10-28', odometer: 10200, gallons: 14.9, cost: 57, station: 'Chevron', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-11-20', odometer: 10450, gallons: 15.2, cost: 59, station: 'Mobil', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-01-05', odometer: 10700, gallons: 14.8, cost: 56, station: 'Shell', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-02-01', odometer: 10950, gallons: 15.1, cost: 58, station: 'BP', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-03-01', odometer: 11200, gallons: 14.9, cost: 57, station: 'Exxon', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-04-01', odometer: 11450, gallons: 15.0, cost: 58, station: 'Chevron', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-05-01', odometer: 11700, gallons: 14.7, cost: 56, station: 'Mobil', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-06-01', odometer: 11950, gallons: 15.3, cost: 59, station: 'Shell', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-07-01', odometer: 12200, gallons: 14.8, cost: 57, station: 'BP', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-08-01', odometer: 12450, gallons: 15.1, cost: 58, station: 'Exxon', fullTank: true, octane: 87 }
       ];
       for (const entry of demoFuel) await db.add('fuel', entry);
-      // No mods for truck demo
+      const demoMods = [
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-04-15', category: 'Bumper', part: 'Front Bumper', brand: 'Mopar', cost: 1200, installedBy: 'Shop', notes: 'Stainless steel front bumper upgrade', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-05-20', category: 'Tires/Wheels', part: 'All-Terrain Tires', brand: 'Goodyear', cost: 1400, installedBy: 'Shop', notes: '35" Duratrac tires for towing', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-07-10', category: 'Recovery', part: 'Tow Hooks', brand: 'ARB', cost: 180, installedBy: 'DIY', notes: 'Recovery points front and rear', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-09-05', category: 'Lighting', part: 'LED Fog Lights', brand: 'Rigid Industries', cost: 350, installedBy: 'Shop', notes: 'Improved visibility in fog', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-11-15', category: 'Interior', part: 'Tonneau Cover', brand: 'Truxedo', cost: 450, installedBy: 'DIY', notes: 'Hard tonneau cover for bed protection', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-02-10', category: 'Electrical', part: 'Backup Camera', brand: 'Mopar', cost: 280, installedBy: 'Shop', notes: 'Wireless backup camera system', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-05-01', category: 'Audio', part: 'Subwoofer', brand: 'Kicker', cost: 320, installedBy: 'DIY', notes: '10" subwoofer for better audio', installed: true }
+      ];
+      for (const entry of demoMods) await db.add('mods', entry);
     }
 
     // Load app function
