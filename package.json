@@ -1,0 +1,12 @@
+{
+  "name": "jeep-journal",
+  "version": "1.0.0",
+  "description": "Personal journal for Jeep vehicles",
+  "scripts": {
+    "start": "serve . -l 8080 --no-clipboard"
+  },
+  "devDependencies": {
+    "serve": "^14.2.1",
+    "@playwright/test": "^1.58.2"
+  }
+}
