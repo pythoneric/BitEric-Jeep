@@ -46,6 +46,9 @@
     .hidden { display: none; }
     .chart { max-height: 300px; }
     @media (max-width: 768px) { .g2, .g3, .g4 { grid-template-columns: 1fr; } .controls { flex-direction: column; gap: 0.5rem; } }
+    .loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 1.5rem; z-index: 9999; }
+    .loader::after { content: ''; width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-top: 1rem; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -207,6 +210,7 @@
       </div>
     </div>
   </main>
+  <div id="loader" class="loader" data-i18n="loading">Loading Jeep Journal...</div>
   <script>
     // I18N
     const I18N = {
@@ -268,7 +272,8 @@
         importData: "Import Data",
         reloadCache: "Reload Cache",
         addVehicle: "Add Vehicle",
-        addVehicleBtn: "Add Vehicle"
+        addVehicleBtn: "Add Vehicle",
+        loading: "Loading Jeep Journal..."
       },
       es: {
         appTitle: "Diario Jeep",
@@ -328,7 +333,8 @@
         importData: "Importar Datos",
         reloadCache: "Recargar Caché",
         addVehicle: "Agregar Vehículo",
-        addVehicleBtn: "Agregar Vehículo"
+        addVehicleBtn: "Agregar Vehículo",
+        loading: "Cargando Diario Jeep..."
       }
     };
 
@@ -728,6 +734,7 @@
       switchTab(lastTab);
       loadFuel();
       loadMods();
+      document.getElementById('loader').style.display = 'none';
     })();
   </script>
 </body>
