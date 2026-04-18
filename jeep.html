@@ -735,7 +735,6 @@
 
     // Load app function
     async function loadApp() {
-      await db.open(stores);
       await seedData();
       setLang(lang);
       setTheme(theme);
@@ -747,6 +746,7 @@
 
     // Init
     (async () => {
+      await db.open(stores);
       await loadApp();
       document.getElementById('loader').style.display = 'none';
     })();
