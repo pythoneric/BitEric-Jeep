@@ -9,21 +9,33 @@ test.beforeEach(async ({ page }) => {
   await page.reload();
 });
 
-test('app loads', async ({ page }) => {
+test('app loads with loader overlay', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('h1')).toContainText('Jeep Journal');
+  await expect(page.locator('#loader')).toBeVisible();
+  await expect(page.locator('#continueBtn')).toBeVisible();
+  await expect(page.locator('#demoBtn')).toBeVisible();
 });
 
-test('refresh button shows loader and reloads', async ({ page }) => {
+test('continue button loads app and hides loader', async ({ page }) => {
   await page.goto('/');
-  // Wait for initial load
+  await page.click('#continueBtn');
   await expect(page.locator('#loader')).toBeHidden();
-  // Click refresh
+  await expect(page.locator('#vehicleSelect')).toBeVisible();
+});
+
+test('demo button loads sample data and hides loader', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#demoBtn');
+  await expect(page.locator('#loader')).toBeHidden();
+  await expect(page.locator('#vehicleSelect')).toContainText('Wrangler Demo');
+});
+
+test('refresh button shows loader overlay and reloads', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#continueBtn');
+  await expect(page.locator('#loader')).toBeHidden();
   await page.click('#refreshBtn');
-  // Loader should appear
   await expect(page.locator('#loader')).toBeVisible();
-  // Wait for reload
   await expect(page.locator('#loader')).toBeHidden();
-  // Check app still works
   await expect(page.locator('#vehicleSelect')).toBeVisible();
 });

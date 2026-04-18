@@ -46,8 +46,13 @@
     .hidden { display: none; }
     .chart { max-height: 300px; }
     @media (max-width: 768px) { .g2, .g3, .g4 { grid-template-columns: 1fr; } .controls { flex-direction: column; gap: 0.5rem; } }
-    .loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 1.5rem; z-index: 9999; }
-    .loader::after { content: ''; width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-top: 1rem; }
+    .loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; }
+    .loader-card { max-width: 480px; background: rgba(20, 26, 35, 0.96); border: 1px solid var(--border); border-radius: 1rem; padding: 2rem; text-align: center; }
+    body.light .loader-card { background: rgba(255, 255, 255, 0.98); color: var(--light-text); border-color: var(--light-border); }
+    .loader-actions { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
+    .loader button { width: 100%; }
+    .loader-note { opacity: 0.8; margin-top: 1rem; }
+    .loader-spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 1rem auto 0; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
@@ -211,7 +216,18 @@
       </div>
     </div>
   </main>
-  <div id="loader" class="loader" data-i18n="loading">Loading Jeep Journal...</div>
+  <div id="loader" class="loader">
+    <div class="loader-card">
+      <h1 data-i18n="loaderTitle">Jeep Journal</h1>
+      <p data-i18n="loaderDescription">Choose how to start. Your data never leaves this device.</p>
+      <div class="loader-actions">
+        <button id="continueBtn" class="btn" data-i18n="continueBtn">Continue where you left off</button>
+        <button id="demoBtn" class="btn" data-i18n="demoBtn">See demo</button>
+      </div>
+      <p class="loader-note" data-i18n="loaderNote">Demo content is sample-only and safe to explore.</p>
+      <div id="loaderSpinner" class="loader-spinner hidden"></div>
+    </div>
+  </div>
   <script>
     // I18N
     const I18N = {
@@ -275,7 +291,12 @@
         reloadCache: "Reload Cache",
         addVehicle: "Add Vehicle",
         addVehicleBtn: "Add Vehicle",
-        loading: "Loading Jeep Journal..."
+        loading: "Loading Jeep Journal...",
+        loaderTitle: "Jeep Journal",
+        loaderDescription: "Choose how to start. Your data never leaves this device.",
+        continueBtn: "Continue where you left off",
+        demoBtn: "See demo",
+        loaderNote: "Demo content is sample-only and safe to explore."
       },
       es: {
         appTitle: "Diario Jeep",
@@ -337,7 +358,12 @@
         reloadCache: "Recargar Caché",
         addVehicle: "Agregar Vehículo",
         addVehicleBtn: "Agregar Vehículo",
-        loading: "Cargando Diario Jeep..."
+        loading: "Cargando Diario Jeep...",
+        loaderTitle: "Diario Jeep",
+        loaderDescription: "Elige cómo empezar. Tus datos nunca salen de este dispositivo.",
+        continueBtn: "Continuar donde lo dejaste",
+        demoBtn: "Ver demo",
+        loaderNote: "El contenido de demo es un ejemplo seguro para explorar."
       }
     };
 
@@ -699,6 +725,22 @@
 
     document.getElementById('refreshBtn').addEventListener('click', async () => {
       document.getElementById('loader').style.display = 'flex';
+      showLoaderSpinner(true);
+      await loadApp();
+      showLoaderSpinner(false);
+      document.getElementById('loader').style.display = 'none';
+    });
+
+    document.getElementById('continueBtn').addEventListener('click', async () => {
+      showLoaderSpinner(true);
+      await loadApp();
+      showLoaderSpinner(false);
+      document.getElementById('loader').style.display = 'none';
+    });
+
+    document.getElementById('demoBtn').addEventListener('click', async () => {
+      showLoaderSpinner(true);
+      await seedDemoData();
       await loadApp();
       document.getElementById('loader').style.display = 'none';
     });
@@ -733,6 +775,36 @@
       navigator.serviceWorker.register('sw.js');
     }
 
+    function showLoaderSpinner(active) {
+      document.getElementById('loaderSpinner').classList.toggle('hidden', !active);
+    }
+
+    async function seedDemoData() {
+      await db.clear('vehicles');
+      await db.clear('maintenance');
+      await db.clear('fuel');
+      await db.clear('mods');
+      const demoVehicles = [
+        { id: crypto.randomUUID(), nickname: 'Wrangler Demo', make: 'Jeep', model: 'Wrangler', year: 2022, trim: 'Rubicon', color: 'Orange', vin: 'DEMOWRANG123', plate: 'DEMO1', purchaseDate: '2023-01-01', odometer: 15200, createdAt: new Date(), updatedAt: new Date() },
+        { id: crypto.randomUUID(), nickname: 'Gladiator Demo', make: 'Jeep', model: 'Gladiator', year: 2023, trim: 'Overland', color: 'Gray', vin: 'DEMGLAD123', plate: 'DEMO2', purchaseDate: '2023-03-01', odometer: 9800, createdAt: new Date(), updatedAt: new Date() }
+      ];
+      for (const vehicle of demoVehicles) await db.add('vehicles', vehicle);
+      const demoMaintenance = [
+        { id: crypto.randomUUID(), vehicleId: demoVehicles[0].id, date: '2024-03-10', odometer: 14800, type: 'Oil change', shop: true, cost: 120, notes: 'Synthetic oil change at dealer' },
+        { id: crypto.randomUUID(), vehicleId: demoVehicles[1].id, date: '2024-04-15', odometer: 9600, type: 'Tire rotation', shop: false, cost: 0, notes: 'DIY rotation' }
+      ];
+      for (const entry of demoMaintenance) await db.add('maintenance', entry);
+      const demoFuel = [
+        { id: crypto.randomUUID(), vehicleId: demoVehicles[0].id, date: '2024-05-01', odometer: 15000, gallons: 12, cost: 45, station: 'Fuel Stop', fullTank: true, octane: 87 },
+        { id: crypto.randomUUID(), vehicleId: demoVehicles[0].id, date: '2024-06-05', odometer: 15200, gallons: 11.5, cost: 43, station: 'Shell', fullTank: true, octane: 87 }
+      ];
+      for (const entry of demoFuel) await db.add('fuel', entry);
+      const demoMods = [
+        { id: crypto.randomUUID(), vehicleId: demoVehicles[0].id, date: '2024-02-01', category: 'Suspension', part: 'Lift Kit', brand: 'Rubicon Express', cost: 1900, installedBy: 'Shop', notes: 'Improved clearance', installed: true }
+      ];
+      for (const entry of demoMods) await db.add('mods', entry);
+    }
+
     // Load app function
     async function loadApp() {
       await seedData();
@@ -747,8 +819,9 @@
     // Init
     (async () => {
       await db.open(stores);
-      await loadApp();
-      document.getElementById('loader').style.display = 'none';
+      setLang(lang);
+      setTheme(theme);
+      await seedData();
     })();
   </script>
 </body>
