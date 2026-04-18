@@ -697,8 +697,10 @@
       setTheme(theme === 'dark' ? 'light' : 'dark');
     });
 
-    document.getElementById('refreshBtn').addEventListener('click', () => {
-      location.reload();
+    document.getElementById('refreshBtn').addEventListener('click', async () => {
+      document.getElementById('loader').style.display = 'flex';
+      await loadApp();
+      document.getElementById('loader').style.display = 'none';
     });
 
     document.querySelectorAll('.tab').forEach(tab => {
@@ -731,8 +733,8 @@
       navigator.serviceWorker.register('sw.js');
     }
 
-    // Init
-    (async () => {
+    // Load app function
+    async function loadApp() {
       await db.open(stores);
       await seedData();
       setLang(lang);
@@ -741,6 +743,11 @@
       switchTab(lastTab);
       loadFuel();
       loadMods();
+    }
+
+    // Init
+    (async () => {
+      await loadApp();
       document.getElementById('loader').style.display = 'none';
     })();
   </script>
