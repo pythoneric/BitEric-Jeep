@@ -184,6 +184,22 @@
     body.light .reminder-btn:hover { background: rgba(0,0,0,0.06); }
     .install-status { margin-top: 0.5rem; padding: 0.5rem; border: 1px dashed var(--border); border-radius: 0.25rem; font-size: 0.85rem; }
     body.light .install-status { border-color: var(--light-border); }
+    .pwa-banner { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10500; background: var(--card); border-top: 1px solid var(--border); padding: 0.85rem 1rem calc(0.85rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 24px rgba(0,0,0,0.3); transform: translateY(100%); opacity: 0; transition: transform 0.28s ease, opacity 0.28s ease; }
+    body.light .pwa-banner { background: var(--light-card); border-top-color: var(--light-border); box-shadow: 0 -4px 24px rgba(0,0,0,0.12); }
+    .pwa-banner.show { transform: translateY(0); opacity: 1; }
+    .pwa-banner-content { display: flex; align-items: center; gap: 0.75rem; max-width: 640px; margin: 0 auto; }
+    .pwa-banner-icon { font-size: 1.7rem; flex-shrink: 0; }
+    .pwa-banner-text { flex: 1; min-width: 0; }
+    .pwa-banner-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.15rem; }
+    .pwa-banner-sub { font-size: 0.8rem; opacity: 0.8; line-height: 1.35; }
+    .pwa-banner-sub kbd { display: inline-block; padding: 1px 5px; background: var(--border); border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; }
+    body.light .pwa-banner-sub kbd { background: var(--light-border); }
+    .pwa-banner-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+    @media (max-width: 520px) {
+      .pwa-banner-content { flex-wrap: wrap; }
+      .pwa-banner-actions { width: 100%; justify-content: stretch; }
+      .pwa-banner-actions .btn { flex: 1; min-height: 44px; }
+    }
     .lightbox { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); display: none; align-items: center; justify-content: center; z-index: 10001; cursor: zoom-out; padding: 1rem; }
     .lightbox.open { display: flex; }
     .lightbox img { max-width: 100%; max-height: 100%; border-radius: 0.25rem; box-shadow: 0 4px 32px rgba(0,0,0,0.6); }
@@ -654,6 +670,19 @@
       </div>
     </div>
   </main>
+  <div id="pwaBanner" class="pwa-banner hidden" role="complementary" aria-label="Install app">
+    <div class="pwa-banner-content">
+      <div class="pwa-banner-icon">📲</div>
+      <div class="pwa-banner-text">
+        <div class="pwa-banner-title" data-i18n="pwaTitle">Install BitEric Jeep</div>
+        <div class="pwa-banner-sub" id="pwaBannerInstructions" data-i18n="pwaInstructionsAndroid">Tap Install to add to your home screen.</div>
+      </div>
+      <div class="pwa-banner-actions">
+        <button type="button" id="pwaInstallBannerBtn" class="btn" data-i18n="pwaInstall">Install</button>
+        <button type="button" id="pwaCloseBtn" class="btn btn-ghost" aria-label="Dismiss" title="Dismiss">✕</button>
+      </div>
+    </div>
+  </div>
   <div id="toast" class="toast hidden" role="status" aria-live="polite"><span id="toastMsg"></span><button type="button" id="toastAction" class="toast-action"></button></div>
   <div id="lightbox" class="lightbox" role="dialog" aria-label="Photo viewer"><img id="lightboxImg" alt=""></div>
   <div id="shortcutsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
@@ -1039,6 +1068,12 @@
         phPartBrand: "Brand",
         phQuantity: "Quantity",
         phPartLocation: "Location (e.g., Garage shelf)",
+        pwaTitle: "Install BitEric Jeep",
+        pwaInstall: "Install",
+        pwaInstructionsAndroid: "Add to your home screen for faster access.",
+        pwaInstructionsIos: "Tap the Share button, then Add to Home Screen.",
+        pwaInstructionsDesktop: "Install as an app from your browser menu.",
+        pwaInstalled: "Installed ✓",
         savedInfoVehicle: "vehicle",
         savedInfoVehicles: "vehicles",
         savedInfoMaint: "maintenance",
@@ -1348,6 +1383,12 @@
         phPartBrand: "Marca",
         phQuantity: "Cantidad",
         phPartLocation: "Ubicación (ej. estante del garaje)",
+        pwaTitle: "Instalar BitEric Jeep",
+        pwaInstall: "Instalar",
+        pwaInstructionsAndroid: "Agrega a tu pantalla de inicio para acceso rápido.",
+        pwaInstructionsIos: "Toca el botón Compartir, luego Agregar a la pantalla de inicio.",
+        pwaInstructionsDesktop: "Instala como app desde el menú de tu navegador.",
+        pwaInstalled: "Instalada ✓",
         savedInfoVehicle: "vehículo",
         savedInfoVehicles: "vehículos",
         savedInfoMaint: "mantenimiento",
@@ -3164,10 +3205,88 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
 
     // PWA install
     let deferredPrompt;
+    const PWA_DISMISSED_KEY = 'pwaBannerDismissed';
+
+    function detectPwaPlatform() {
+      const ua = navigator.userAgent;
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      if (standalone) return 'standalone';
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if (isIOS) return 'ios';
+      if (/Android/.test(ua)) return 'android';
+      if (/Chrome|Edg/.test(ua)) return 'desktop';
+      return 'unsupported';
+    }
+
+    function applyPwaBannerContent() {
+      const platform = detectPwaPlatform();
+      const instr = document.getElementById('pwaBannerInstructions');
+      const btn = document.getElementById('pwaInstallBannerBtn');
+      if (!instr || !btn) return;
+      if (platform === 'ios') {
+        instr.dataset.i18n = 'pwaInstructionsIos';
+        instr.textContent = t('pwaInstructionsIos');
+        btn.classList.add('hidden'); // iOS has no programmatic install
+      } else if (platform === 'desktop') {
+        instr.dataset.i18n = 'pwaInstructionsDesktop';
+        instr.textContent = t('pwaInstructionsDesktop');
+        btn.classList.toggle('hidden', !deferredPrompt);
+      } else {
+        instr.dataset.i18n = 'pwaInstructionsAndroid';
+        instr.textContent = t('pwaInstructionsAndroid');
+        btn.classList.toggle('hidden', !deferredPrompt);
+      }
+    }
+
+    function showPwaBanner() {
+      const platform = detectPwaPlatform();
+      // User asked for this on mobile only — skip desktop + already-installed + unknown browsers.
+      if (platform !== 'ios' && platform !== 'android') return;
+      if (localStorage.getItem(PWA_DISMISSED_KEY)) return;
+      applyPwaBannerContent();
+      const banner = document.getElementById('pwaBanner');
+      banner.classList.remove('hidden');
+      requestAnimationFrame(() => requestAnimationFrame(() => banner.classList.add('show')));
+    }
+
+    function dismissPwaBanner(persist = true) {
+      const banner = document.getElementById('pwaBanner');
+      if (!banner) return;
+      banner.classList.remove('show');
+      setTimeout(() => banner.classList.add('hidden'), 300);
+      if (persist) localStorage.setItem(PWA_DISMISSED_KEY, '1');
+    }
+
+    document.getElementById('pwaCloseBtn').addEventListener('click', () => dismissPwaBanner(true));
+    document.getElementById('pwaInstallBannerBtn').addEventListener('click', async () => {
+      if (!deferredPrompt) {
+        if (detectPwaPlatform() === 'ios') showToast(t('pwaInstructionsIos'), 6000);
+        return;
+      }
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      if (outcome === 'accepted') {
+        showToast(t('pwaInstalled'));
+        dismissPwaBanner(true);
+      }
+      refreshInstallStatus();
+    });
+
+    window.addEventListener('appinstalled', () => {
+      dismissPwaBanner(true);
+      deferredPrompt = null;
+      refreshInstallStatus();
+    });
+
+    // Fire the banner shortly after first paint; detection handles the platform.
+    setTimeout(showPwaBanner, 1500);
+
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
       document.getElementById('installBtn').classList.remove('hidden');
+      applyPwaBannerContent();
     });
 
     document.getElementById('installBtn').addEventListener('click', () => {
