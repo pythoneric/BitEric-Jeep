@@ -8,6 +8,7 @@
   <link rel="icon" href="icon-192.png">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <style>
     :root {
       --bg: #0b0f14;
@@ -28,8 +29,8 @@
     .controls { display: flex; gap: 1rem; align-items: center; }
     select, button { background: var(--accent); color: white; border: none; padding: 0.5rem; border-radius: 0.25rem; cursor: pointer; }
     body.light select, body.light button { background: var(--light-accent); }
-    .tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); }
-    .tab { flex: 1; padding: 1rem; text-align: center; cursor: pointer; border-bottom: 2px solid transparent; }
+    .tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tab { flex: 1 0 auto; min-width: 100px; padding: 1rem; text-align: center; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
     .tab.active { border-bottom-color: var(--accent); }
     body.light .tab.active { border-bottom-color: var(--light-accent); }
     .content { padding: 1rem; }
@@ -52,10 +53,67 @@
     .loader-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
     .loader-explanation { opacity: 0.8; margin-top: 0.5rem; font-size: 0.9rem; }
     .loader-secondary { display: flex; gap: 1rem; margin-top: 1rem; justify-content: center; }
+    .interval-details { margin-top: 1rem; }
+    .interval-fields { display: flex; gap: 1rem; margin-top: 0.5rem; }
+    .reminder-item { color: #d97706; font-weight: bold; }
     .loader-secondary .btn { width: auto; }
     .loader-note { opacity: 0.8; margin-top: 1rem; }
     .loader-spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 1rem auto 0; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .progress-bar { width: 100%; height: 10px; background: var(--border); border-radius: 5px; overflow: hidden; margin: 0.5rem 0; }
+    body.light .progress-bar { background: var(--light-border); }
+    .progress-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+    body.light .progress-bar-fill { background: var(--light-accent); }
+    .progress-bar-fill.warn { background: #f59e0b; }
+    .progress-bar-fill.over { background: #dc2626; }
+    .reminder-item.overdue { color: #dc2626; font-weight: bold; }
+    .reminder-item.due-soon { color: #f59e0b; font-weight: bold; }
+    .reminder-item.upcoming { color: #10b981; }
+    .stat-delta.positive { color: #10b981; }
+    .stat-delta.negative { color: #dc2626; }
+    .stat-big { font-size: 1.5rem; font-weight: 700; }
+    .stat-sub { opacity: 0.75; font-size: 0.85rem; }
+    .template-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+    .template-row select { flex: 1; min-width: 200px; }
+    .report-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
+    .row-actions { display: flex; gap: 0.25rem; flex-shrink: 0; }
+    .del-btn, .edit-btn { background: transparent; color: var(--text); padding: 0 0.35rem; font-size: 0.85rem; border: 1px solid transparent; border-radius: 0.25rem; cursor: pointer; }
+    .del-btn { color: #dc2626; }
+    .del-btn:hover { background: rgba(220, 38, 38, 0.15); border-color: #dc2626; }
+    .edit-btn:hover { background: rgba(217, 119, 6, 0.15); border-color: var(--accent); }
+    body.light .del-btn { color: #b91c1c; }
+    body.light .edit-btn { color: var(--light-text); }
+    .btn-danger { background: #dc2626 !important; margin-top: 0.5rem; }
+    .btn-danger:hover { background: #b91c1c !important; }
+    .photo-preview { max-width: 120px; max-height: 120px; border-radius: 0.25rem; object-fit: cover; display: block; }
+    .photo-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 0.25rem; margin-right: 0.5rem; vertical-align: middle; cursor: pointer; }
+    .edit-banner { background: var(--accent); color: white; padding: 0.5rem; border-radius: 0.25rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+    body.light .edit-banner { background: var(--light-accent); }
+    .search-input { width: 100%; margin: 0.5rem 0; }
+    .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 0.75rem 1rem; border-radius: 0.5rem; box-shadow: 0 4px 16px rgba(0,0,0,0.3); display: flex; gap: 1rem; align-items: center; z-index: 10000; max-width: calc(100% - 2rem); }
+    body.light .toast { background: var(--light-card); color: var(--light-text); border-color: var(--light-border); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+    .toast-action { background: transparent; color: var(--accent); border: none; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 0.85rem; padding: 0 0.5rem; }
+    body.light .toast-action { color: var(--light-accent); }
+    .offline-badge { display: none; background: #dc2626; color: white; padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 700; }
+    body.offline .offline-badge { display: inline-block; }
+    .reminder-actions { display: inline-flex; gap: 0.25rem; margin-left: 0.5rem; }
+    .reminder-btn { background: transparent; border: 1px solid currentColor; color: inherit; padding: 0 0.4rem; font-size: 0.75rem; border-radius: 0.25rem; cursor: pointer; }
+    .reminder-btn:hover { background: rgba(255,255,255,0.1); }
+    body.light .reminder-btn:hover { background: rgba(0,0,0,0.06); }
+    .install-status { margin-top: 0.5rem; padding: 0.5rem; border: 1px dashed var(--border); border-radius: 0.25rem; font-size: 0.85rem; }
+    body.light .install-status { border-color: var(--light-border); }
+    .vehicle-meta { opacity: 0.8; font-size: 0.9rem; margin-top: 0.25rem; }
+    .vehicle-meta span { margin-right: 0.75rem; white-space: nowrap; }
+    .reminder-item.due-soon { color: #c2410c; }
+    body.light .reminder-item.due-soon { color: #9a3412; }
+    .stat-delta.positive { color: #047857; }
+    body.light .stat-delta.positive { color: #065f46; }
+    .entry-list { list-style: none; padding: 0; }
+    .entry-list li { display: flex; justify-content: space-between; align-items: center; padding: 0.35rem 0; border-bottom: 1px solid var(--border); gap: 0.5rem; }
+    body.light .entry-list li { border-bottom-color: var(--light-border); }
+    .entry-list li:last-child { border-bottom: none; }
+    .entry-list .entry-main { flex: 1; min-width: 0; }
+    .empty-state { opacity: 0.7; font-style: italic; padding: 0.5rem 0; }
   </style>
 </head>
 <body>
@@ -66,6 +124,7 @@
       <button id="langToggle" data-i18n="langToggle">EN</button>
       <button id="themeToggle" data-i18n="themeToggle">🌙</button>
       <button id="refreshBtn" data-i18n="refreshBtn">🔄</button>
+      <span class="offline-badge" data-i18n="offline">Offline</span>
       <button id="installBtn" class="hidden" data-i18n="installBtn">Install</button>
     </div>
   </header>
@@ -74,13 +133,32 @@
     <div class="tab" data-tab="maintenance" data-i18n="tabMaintenance">Maintenance</div>
     <div class="tab" data-tab="fuel" data-i18n="tabFuel">Fuel</div>
     <div class="tab" data-tab="mods" data-i18n="tabMods">Mods</div>
+    <div class="tab" data-tab="parts" data-i18n="tabParts">Parts</div>
     <div class="tab" data-tab="settings" data-i18n="tabSettings">Settings</div>
   </nav>
   <main class="content">
     <div id="dashboard" class="tab-content">
       <div class="card">
+        <h3 data-i18n="serviceReminders">Service Reminders</h3>
+        <ul id="serviceReminders"></ul>
+      </div>
+      <div class="card">
         <h2 data-i18n="vehicleCard">Vehicle</h2>
         <div id="vehicleCard"></div>
+      </div>
+      <div class="g3">
+        <div class="card">
+          <h3 id="budgetCardTitle" data-i18n="budgetThisMonth">This month</h3>
+          <div id="budgetMonthCard"></div>
+        </div>
+        <div class="card">
+          <h3 data-i18n="mpgGoalCard">MPG vs Goal</h3>
+          <div id="mpgGoalCard"></div>
+        </div>
+        <div class="card">
+          <h3 data-i18n="vehicleValue">Estimated Value</h3>
+          <div id="vehicleValueCard"></div>
+        </div>
       </div>
       <div class="g2">
         <div class="card">
@@ -102,10 +180,33 @@
           <canvas id="costChart" class="chart"></canvas>
         </div>
       </div>
+      <div class="card">
+        <h3 data-i18n="totalOwnershipCost">Total cost of ownership</h3>
+        <div id="tcoCard"></div>
+      </div>
+      <div class="card">
+        <h3 data-i18n="monthlyTrend">Monthly spend (last 12 months)</h3>
+        <canvas id="monthlyChart" class="chart"></canvas>
+      </div>
     </div>
     <div id="maintenance" class="tab-content hidden">
       <div class="card">
         <h2 data-i18n="maintenanceLog">Maintenance Log</h2>
+        <div class="template-row">
+          <label data-i18n="quickTemplates">Quick templates</label>
+          <select id="mTemplate">
+            <option value="" data-i18n="selectTemplate">Select a service…</option>
+            <option value="oil" data-i18n="templateOil">Oil change (5k mi / 6 mo)</option>
+            <option value="tireRotation" data-i18n="templateTireRotation">Tire rotation (7.5k mi / 6 mo)</option>
+            <option value="brakeFluid" data-i18n="templateBrakeFluid">Brake fluid (30k mi / 24 mo)</option>
+            <option value="transmission" data-i18n="templateTransmission">Transmission fluid (60k mi / 36 mo)</option>
+            <option value="airFilter" data-i18n="templateAirFilter">Air filter (30k mi / 24 mo)</option>
+            <option value="cabinFilter" data-i18n="templateCabinFilter">Cabin filter (20k mi / 12 mo)</option>
+            <option value="sparkPlugs" data-i18n="templateSparkPlugs">Spark plugs (60k mi)</option>
+            <option value="coolant" data-i18n="templateCoolant">Coolant (50k mi / 36 mo)</option>
+            <option value="battery" data-i18n="templateBattery">Battery check (50k mi / 48 mo)</option>
+          </select>
+        </div>
         <form id="maintenanceForm">
           <input type="date" id="mDate" required>
           <input type="number" id="mOdometer" placeholder="Odometer (mi)" required>
@@ -128,12 +229,27 @@
             <option value="Inspection" data-i18n="inspection">Inspection</option>
             <option value="Other" data-i18n="other">Other</option>
           </select>
-          <input type="text" id="mOtherType" placeholder="Specify if Other">
+          <input type="text" id="mOtherType" class="hidden" placeholder="Specify if Other">
           <label><input type="checkbox" id="mShop"> <span data-i18n="shop">Shop</span> (<span data-i18n="diy">DIY</span>)</label>
           <input type="number" step="0.01" id="mCost" placeholder="Cost (USD)">
           <textarea id="mNotes" placeholder="Notes"></textarea>
+          <details class="interval-details">
+            <summary data-i18n="setReminder">Set Service Reminder</summary>
+            <div class="interval-fields">
+              <input type="number" id="mIntervalMiles" placeholder="Interval (miles)">
+              <input type="number" id="mIntervalMonths" placeholder="Interval (months)">
+            </div>
+          </details>
+          <label data-i18n="maintPhoto">Receipt (optional)</label>
+          <input type="file" id="mPhotoFile" accept="image/*">
+          <img id="mPhotoPreview" class="photo-preview hidden" alt="">
           <button type="submit" class="btn" data-i18n="addEntry">Add Entry</button>
         </form>
+        <div class="report-actions">
+          <button id="reportBtn" class="btn" data-i18n="printReport">Print service report</button>
+        </div>
+        <h3 data-i18n="maintenanceHistory">Maintenance History</h3>
+        <input type="search" id="maintenanceSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…">
         <ul id="maintenanceList"></ul>
       </div>
     </div>
@@ -144,9 +260,10 @@
           <input type="date" id="fDate" required>
           <input type="number" id="fOdometer" placeholder="Odometer (mi)" required>
           <input type="number" step="0.01" id="fGallons" placeholder="Gallons" required>
-          <input type="number" step="0.01" id="fCost" placeholder="Total Cost (USD)" required>
+          <input type="number" step="0.001" id="fPrice" data-i18n-placeholder="pricePerGallon" placeholder="$ / gallon">
+          <input type="number" step="0.01" id="fCost" placeholder="Total Cost (USD)">
           <input type="text" id="fStation" placeholder="Station">
-          <label><input type="checkbox" id="fFullTank" required> <span data-i18n="fullTank">Full Tank</span></label>
+          <label><input type="checkbox" id="fFullTank" checked> <span data-i18n="fullTank">Full Tank</span></label>
           <input type="number" id="fOctane" placeholder="Octane">
           <button type="submit" class="btn" data-i18n="addEntry">Add Entry</button>
         </form>
@@ -161,6 +278,7 @@
           </div>
         </div>
         <div id="fuelStats"></div>
+        <input type="search" id="fuelSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…">
         <ul id="fuelList"></ul>
       </div>
     </div>
@@ -185,12 +303,30 @@
           <input type="text" id="modPart" placeholder="Part Name" required>
           <input type="text" id="modBrand" placeholder="Brand">
           <input type="number" step="0.01" id="modCost" placeholder="Cost (USD)">
-          <input type="text" id="modInstalledBy" placeholder="Installed By">
+          <label><input type="checkbox" id="modShop"> <span data-i18n="shop">Shop</span> (<span data-i18n="diy">DIY</span>)</label>
           <textarea id="modNotes" placeholder="Notes"></textarea>
           <label><input type="checkbox" id="modInstalled" checked> <span data-i18n="stillInstalled">Still Installed</span></label>
+          <input type="date" id="modRemovedDate" class="hidden" data-i18n-placeholder="removedOn" placeholder="Removed on">
+          <label data-i18n="modPhoto">Photo (optional)</label>
+          <input type="file" id="modPhotoFile" accept="image/*">
+          <img id="modPhotoPreview" class="photo-preview hidden" alt="">
           <button type="submit" class="btn" data-i18n="addMod">Add Mod</button>
         </form>
+        <input type="search" id="modsSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…">
         <div id="modsList"></div>
+      </div>
+    </div>
+    <div id="parts" class="tab-content hidden">
+      <div class="card">
+        <h2 data-i18n="partsInventory">Parts Inventory</h2>
+        <form id="partsForm">
+          <input type="text" id="partName" placeholder="Part Name" required>
+          <input type="number" id="partQuantity" placeholder="Quantity" min="1" value="1">
+          <input type="text" id="partLocation" placeholder="Location (e.g., Garage shelf)">
+          <button type="submit" class="btn" data-i18n="addPart">Add Part</button>
+        </form>
+        <input type="search" id="partsSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…">
+        <ul id="partsList"></ul>
       </div>
     </div>
     <div id="settings" class="tab-content hidden">
@@ -208,16 +344,43 @@
           <input type="text" id="vPlate" placeholder="License Plate">
           <input type="date" id="vPurchaseDate" placeholder="Purchase Date">
           <input type="number" id="vOdometer" placeholder="Current Odometer (mi)">
+          <input type="number" step="0.01" id="vPurchasePrice" data-i18n-placeholder="purchasePrice" placeholder="Purchase price (USD)">
+          <input type="number" step="0.1" id="vMpgGoal" data-i18n-placeholder="mpgGoal" placeholder="MPG goal">
+          <input type="number" step="0.01" id="vMonthlyBudget" data-i18n-placeholder="monthlyBudget" placeholder="Monthly budget (USD)">
+          <input type="number" step="0.01" id="vAnnualBudget" data-i18n-placeholder="annualBudget" placeholder="Annual budget (USD)">
           <button type="submit" class="btn" data-i18n="addVehicleBtn">Add Vehicle</button>
         </form>
+        <h3 data-i18n="editVehicle">Edit Active Vehicle</h3>
+        <form id="editVehicleForm">
+          <input type="text" id="eNickname" data-i18n-placeholder="nickname" placeholder="Nickname">
+          <input type="text" id="eMake" data-i18n-placeholder="make" placeholder="Make">
+          <input type="text" id="eModel" data-i18n-placeholder="model" placeholder="Model">
+          <input type="number" id="eYear" data-i18n-placeholder="year" placeholder="Year">
+          <input type="text" id="eTrim" data-i18n-placeholder="trim" placeholder="Trim">
+          <input type="text" id="eColor" data-i18n-placeholder="color" placeholder="Color">
+          <input type="text" id="eVin" data-i18n-placeholder="vin" placeholder="VIN">
+          <input type="text" id="ePlate" data-i18n-placeholder="plate" placeholder="License Plate">
+          <input type="date" id="ePurchaseDate" data-i18n-placeholder="purchaseDate" placeholder="Purchase Date">
+          <input type="number" id="eOdometer" data-i18n-placeholder="odometer" placeholder="Current Odometer (mi)">
+          <input type="number" step="0.01" id="ePurchasePrice" data-i18n-placeholder="purchasePrice" placeholder="Purchase price (USD)">
+          <input type="number" step="0.1" id="eMpgGoal" data-i18n-placeholder="mpgGoal" placeholder="MPG goal">
+          <input type="number" step="0.01" id="eMonthlyBudget" data-i18n-placeholder="monthlyBudget" placeholder="Monthly budget (USD)">
+          <input type="number" step="0.01" id="eAnnualBudget" data-i18n-placeholder="annualBudget" placeholder="Annual budget (USD)">
+          <input type="number" step="0.01" id="eManualValue" data-i18n-placeholder="manualValue" placeholder="Manual value override (USD)">
+          <button type="submit" class="btn" data-i18n="saveVehicle">Save changes</button>
+        </form>
+        <button id="deleteVehicleBtn" class="btn btn-danger" data-i18n="deleteVehicle">Delete active vehicle</button>
         <button id="exportBtn" class="btn" data-i18n="exportData">Export Data</button>
+        <button id="exportCsvBtn" class="btn" data-i18n="exportCsv">Export CSV</button>
         <input type="file" id="importFile" accept=".json">
         <button id="importBtn" class="btn" data-i18n="importData">Import Data</button>
         <div id="cacheInfo"></div>
         <button id="reloadBtn" class="btn" data-i18n="reloadCache">Reload Cache</button>
+        <div id="installStatus" class="install-status"></div>
       </div>
     </div>
   </main>
+  <div id="toast" class="toast hidden"><span id="toastMsg"></span><button type="button" id="toastAction" class="toast-action"></button></div>
   <div id="loader" class="loader">
     <div class="loader-card">
       <h1 data-i18n="loaderTitle">BitEric Jeep</h1>
@@ -253,8 +416,10 @@
         tabMaintenance: "Maintenance",
         tabFuel: "Fuel",
         tabMods: "Mods",
+        tabParts: "Parts",
         tabSettings: "Settings",
         vehicleCard: "Vehicle",
+        serviceReminders: "Service Reminders",
         recentMaintenance: "Recent Maintenance",
         recentFuel: "Recent Fuel",
         topMods: "Top Mods",
@@ -279,6 +444,7 @@
         other: "Other",
         shop: "Shop",
         diy: "DIY",
+        setReminder: "Set Service Reminder",
         addEntry: "Add Entry",
         fuelLog: "Fuel Log",
         fullTank: "Full Tank",
@@ -297,6 +463,8 @@
         drivetrain: "Drivetrain",
         addMod: "Add Mod",
         stillInstalled: "Still Installed",
+        partsInventory: "Parts Inventory",
+        addPart: "Add Part",
         settings: "Settings",
         exportData: "Export Data",
         importData: "Import Data",
@@ -314,7 +482,106 @@
         startFreshBtn: "Start Fresh",
         demoBtn: "See demo",
         loaderNote: "Demo content is sample-only and safe to explore.",
-        resetData: "Reset Data"
+        resetData: "Reset Data",
+        quickTemplates: "Quick templates",
+        selectTemplate: "Select a service…",
+        templateOil: "Oil change (5k mi / 6 mo)",
+        templateTireRotation: "Tire rotation (7.5k mi / 6 mo)",
+        templateBrakeFluid: "Brake fluid (30k mi / 24 mo)",
+        templateTransmission: "Transmission fluid (60k mi / 36 mo)",
+        templateAirFilter: "Air filter (30k mi / 24 mo)",
+        templateCabinFilter: "Cabin filter (20k mi / 12 mo)",
+        templateSparkPlugs: "Spark plugs (60k mi)",
+        templateCoolant: "Coolant (50k mi / 36 mo)",
+        templateBattery: "Battery check (50k mi / 48 mo)",
+        printReport: "Print service report",
+        monthlyBudget: "Monthly budget (USD)",
+        annualBudget: "Annual budget (USD)",
+        mpgGoal: "MPG goal",
+        purchasePrice: "Purchase price (USD)",
+        budgetThisMonth: "This month",
+        budgetThisYear: "This year",
+        mpgGoalCard: "MPG vs Goal",
+        vehicleValue: "Estimated Value",
+        noBudgetSet: "Set a budget in Settings",
+        noGoalSet: "Set a goal in Settings",
+        noPriceSet: "Set purchase price in Settings",
+        ofBudget: "of budget",
+        depreciation: "depreciation",
+        goalsBudget: "Goals & Budget (active vehicle)",
+        saveGoals: "Save goals",
+        savedMsg: "Saved",
+        reportTitle: "Service History Report",
+        reportVehicle: "Vehicle",
+        reportOdometer: "Odometer",
+        reportTotals: "Totals",
+        reportMaintenance: "Maintenance",
+        reportFuel: "Fuel",
+        reportMods: "Modifications",
+        reportGenerated: "Generated",
+        reportPrint: "Print",
+        overdue: "overdue",
+        dueSoon: "due soon",
+        deleteBtn: "Delete",
+        editBtn: "Edit",
+        confirmDelete: "Delete this entry?",
+        confirmDeleteVehicle: "Delete this vehicle and all its maintenance, fuel, mods, and parts?",
+        maintenanceHistory: "Maintenance History",
+        partsInventoryEmpty: "No parts yet. Add one above.",
+        maintenanceHistoryEmpty: "No maintenance entries yet.",
+        modPhoto: "Photo (optional)",
+        editVehicle: "Edit Active Vehicle",
+        saveVehicle: "Save changes",
+        deleteVehicle: "Delete active vehicle",
+        nickname: "Nickname",
+        make: "Make",
+        model: "Model",
+        year: "Year",
+        trim: "Trim",
+        color: "Color",
+        vin: "VIN",
+        plate: "License Plate",
+        purchaseDate: "Purchase Date",
+        odometer: "Current Odometer (mi)",
+        cancelEdit: "Cancel",
+        updateEntry: "Update entry",
+        editingEntry: "Editing…",
+        importInvalid: "Import failed: invalid file format. No data changed.",
+        searchPlaceholder: "Search…",
+        noResults: "No results match your search.",
+        noRecentMaintenance: "No maintenance logged yet.",
+        noRecentFuel: "No fuel entries yet.",
+        noMods: "No modifications logged yet.",
+        budgetMonthAndYear: "Budget",
+        budgetYearOnly: "This year",
+        odometerWarn: "Odometer is lower than a previous entry — are you sure?",
+        pricePerGallon: "$ / gallon",
+        removedOn: "Removed on",
+        undoDelete: "Entry deleted.",
+        undoAction: "Undo",
+        totalOwnershipCost: "Total cost of ownership",
+        tcoMaintenance: "Maintenance",
+        tcoFuel: "Fuel",
+        tcoMods: "Mods",
+        tcoTotal: "Total",
+        exportCsv: "Export CSV",
+        maintPhoto: "Receipt (optional)",
+        noModsMatch: "No mods match your search.",
+        noPartsMatch: "No parts match your search.",
+        snoozeBtn: "Snooze",
+        dismissBtn: "Dismiss",
+        snoozed: "Snoozed +500 mi / +30 days",
+        duplicateWarn: "A similar entry already exists on that date. Add anyway?",
+        monthlyTrend: "Monthly spend (last 12 months)",
+        manualValue: "Manual value override (USD)",
+        manualValueHint: "Using manual value",
+        offline: "Offline",
+        installedStatus: "Installed as an app ✓",
+        installAsApp: "Install as app",
+        installHelpIos: "On iOS: tap Share → Add to Home Screen",
+        installHelpOther: "Use your browser menu → Install / Add to Home Screen",
+        missingCost: "Enter either Total Cost or $/gallon.",
+        enterOne: "Fill in the form first."
       },
       es: {
         appTitle: "BitEric Jeep",
@@ -326,8 +593,10 @@
         tabMaintenance: "Mantenimiento",
         tabFuel: "Combustible",
         tabMods: "Mods",
+        tabParts: "Piezas",
         tabSettings: "Configuración",
         vehicleCard: "Vehículo",
+        serviceReminders: "Recordatorios de Servicio",
         recentMaintenance: "Mantenimiento Reciente",
         recentFuel: "Combustible Reciente",
         topMods: "Mods Principales",
@@ -352,6 +621,7 @@
         other: "Otro",
         shop: "Taller",
         diy: "DIY",
+        setReminder: "Establecer Recordatorio de Servicio",
         addEntry: "Agregar Entrada",
         fuelLog: "Registro de Combustible",
         fullTank: "Tanque Lleno",
@@ -387,7 +657,106 @@
         startFreshBtn: "Empezar Fresco",
         demoBtn: "Ver demo",
         loaderNote: "El contenido de demo es un ejemplo seguro para explorar.",
-        resetData: "Restablecer Datos"
+        resetData: "Restablecer Datos",
+        quickTemplates: "Plantillas rápidas",
+        selectTemplate: "Selecciona un servicio…",
+        templateOil: "Cambio de aceite (5k mi / 6 mes)",
+        templateTireRotation: "Rotación de neumáticos (7.5k mi / 6 mes)",
+        templateBrakeFluid: "Fluido de freno (30k mi / 24 mes)",
+        templateTransmission: "Fluido de transmisión (60k mi / 36 mes)",
+        templateAirFilter: "Filtro de aire (30k mi / 24 mes)",
+        templateCabinFilter: "Filtro de cabina (20k mi / 12 mes)",
+        templateSparkPlugs: "Bujías (60k mi)",
+        templateCoolant: "Refrigerante (50k mi / 36 mes)",
+        templateBattery: "Revisión de batería (50k mi / 48 mes)",
+        printReport: "Imprimir reporte de servicio",
+        monthlyBudget: "Presupuesto mensual (USD)",
+        annualBudget: "Presupuesto anual (USD)",
+        mpgGoal: "Meta de MPG",
+        purchasePrice: "Precio de compra (USD)",
+        budgetThisMonth: "Este mes",
+        budgetThisYear: "Este año",
+        mpgGoalCard: "MPG vs Meta",
+        vehicleValue: "Valor estimado",
+        noBudgetSet: "Configura un presupuesto",
+        noGoalSet: "Configura una meta",
+        noPriceSet: "Configura el precio de compra",
+        ofBudget: "del presupuesto",
+        depreciation: "depreciación",
+        goalsBudget: "Metas y presupuesto (vehículo activo)",
+        saveGoals: "Guardar metas",
+        savedMsg: "Guardado",
+        reportTitle: "Reporte de Historial de Servicio",
+        reportVehicle: "Vehículo",
+        reportOdometer: "Odómetro",
+        reportTotals: "Totales",
+        reportMaintenance: "Mantenimiento",
+        reportFuel: "Combustible",
+        reportMods: "Modificaciones",
+        reportGenerated: "Generado",
+        reportPrint: "Imprimir",
+        overdue: "vencido",
+        dueSoon: "próximo",
+        deleteBtn: "Eliminar",
+        editBtn: "Editar",
+        confirmDelete: "¿Eliminar esta entrada?",
+        confirmDeleteVehicle: "¿Eliminar este vehículo y todo su mantenimiento, combustible, mods y piezas?",
+        maintenanceHistory: "Historial de mantenimiento",
+        partsInventoryEmpty: "Sin piezas aún. Agrega una arriba.",
+        maintenanceHistoryEmpty: "Sin entradas de mantenimiento.",
+        modPhoto: "Foto (opcional)",
+        editVehicle: "Editar vehículo activo",
+        saveVehicle: "Guardar cambios",
+        deleteVehicle: "Eliminar vehículo activo",
+        nickname: "Apodo",
+        make: "Marca",
+        model: "Modelo",
+        year: "Año",
+        trim: "Versión",
+        color: "Color",
+        vin: "VIN",
+        plate: "Placa",
+        purchaseDate: "Fecha de compra",
+        odometer: "Odómetro actual (mi)",
+        cancelEdit: "Cancelar",
+        updateEntry: "Actualizar entrada",
+        editingEntry: "Editando…",
+        importInvalid: "Error al importar: formato inválido. No se cambiaron datos.",
+        searchPlaceholder: "Buscar…",
+        noResults: "Sin resultados.",
+        noRecentMaintenance: "Aún no hay mantenimiento registrado.",
+        noRecentFuel: "Aún no hay entradas de combustible.",
+        noMods: "Aún no hay modificaciones.",
+        budgetMonthAndYear: "Presupuesto",
+        budgetYearOnly: "Este año",
+        odometerWarn: "El odómetro es menor que una entrada previa — ¿seguro?",
+        pricePerGallon: "$ / galón",
+        removedOn: "Retirado el",
+        undoDelete: "Entrada eliminada.",
+        undoAction: "Deshacer",
+        totalOwnershipCost: "Costo total de propiedad",
+        tcoMaintenance: "Mantenimiento",
+        tcoFuel: "Combustible",
+        tcoMods: "Mods",
+        tcoTotal: "Total",
+        exportCsv: "Exportar CSV",
+        maintPhoto: "Recibo (opcional)",
+        noModsMatch: "Sin mods que coincidan.",
+        noPartsMatch: "Sin piezas que coincidan.",
+        snoozeBtn: "Posponer",
+        dismissBtn: "Descartar",
+        snoozed: "Pospuesto +500 mi / +30 días",
+        duplicateWarn: "Ya existe una entrada similar en esa fecha. ¿Agregar de todos modos?",
+        monthlyTrend: "Gasto mensual (últimos 12 meses)",
+        manualValue: "Valor manual (USD)",
+        manualValueHint: "Usando valor manual",
+        offline: "Sin conexión",
+        installedStatus: "Instalado como app ✓",
+        installAsApp: "Instalar como app",
+        installHelpIos: "En iOS: toca Compartir → Agregar a inicio",
+        installHelpOther: "Usa el menú de tu navegador → Instalar / Agregar a inicio",
+        missingCost: "Ingresa el costo total o $/galón.",
+        enterOne: "Completa el formulario primero."
       }
     };
 
@@ -396,6 +765,8 @@
     let activeVehicleId = localStorage.getItem('activeVehicleId');
     let lastTab = localStorage.getItem('lastTab') || 'dashboard';
 
+    const DB_VERSION = 2;
+
     // IndexedDB wrapper
     class DB {
       constructor(dbName) {
@@ -403,7 +774,7 @@
       }
       async open(stores) {
         return new Promise((resolve, reject) => {
-          const request = indexedDB.open(this.dbName, 1);
+          const request = indexedDB.open(this.dbName, DB_VERSION);
           request.onupgradeneeded = (e) => {
             const db = e.target.result;
             stores.forEach(store => {
@@ -474,7 +845,8 @@
       { name: 'vehicles', keyPath: 'id', indexes: [] },
       { name: 'maintenance', keyPath: 'id', indexes: [{ name: 'vehicleId', keyPath: 'vehicleId' }] },
       { name: 'fuel', keyPath: 'id', indexes: [{ name: 'vehicleId', keyPath: 'vehicleId' }] },
-      { name: 'mods', keyPath: 'id', indexes: [{ name: 'vehicleId', keyPath: 'vehicleId' }] }
+      { name: 'mods', keyPath: 'id', indexes: [{ name: 'vehicleId', keyPath: 'vehicleId' }] },
+      { name: 'parts', keyPath: 'id', indexes: [{ name: 'vehicleId', keyPath: 'vehicleId' }] }
     ];
 
     // Seed data
@@ -494,6 +866,10 @@
         const key = el.dataset.i18n;
         el.textContent = I18N[lang][key] || key;
       });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.dataset.i18nPlaceholder;
+        el.placeholder = I18N[lang][key] || key;
+      });
       document.documentElement.lang = lang;
     }
 
@@ -504,12 +880,33 @@
       document.getElementById('themeToggle').textContent = theme === 'dark' ? '🌙' : '☀️';
     }
 
+    async function autofillFormDefaults(tab) {
+      const today = new Date().toISOString().split('T')[0];
+      const vehicle = activeVehicleId ? (await db.getAll('vehicles')).find(v => v.id === activeVehicleId) : null;
+      const odo = vehicle?.odometer || '';
+      if (tab === 'maintenance' && !editState.maintenance) {
+        if (!document.getElementById('mDate').value) document.getElementById('mDate').value = today;
+        if (!document.getElementById('mOdometer').value) document.getElementById('mOdometer').value = odo;
+      } else if (tab === 'fuel' && !editState.fuel) {
+        if (!document.getElementById('fDate').value) document.getElementById('fDate').value = today;
+        if (!document.getElementById('fOdometer').value) document.getElementById('fOdometer').value = odo;
+      } else if (tab === 'mods' && !editState.mods) {
+        if (!document.getElementById('modDate').value) document.getElementById('modDate').value = today;
+      }
+    }
+
     function switchTab(tab) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
       document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
       document.getElementById(tab).classList.remove('hidden');
       localStorage.setItem('lastTab', tab);
+      if (tab === 'maintenance') loadMaintenance();
+      else if (tab === 'fuel') loadFuel();
+      else if (tab === 'mods') loadMods();
+      else if (tab === 'parts') loadParts();
+      else if (tab === 'dashboard') loadDashboard();
+      autofillFormDefaults(tab);
     }
 
     async function loadVehicles() {
@@ -530,80 +927,551 @@
       loadDashboard();
     }
 
+    let costChartInstance = null;
+    let mpgChartInstance = null;
+    let priceChartInstance = null;
+    let monthlyChartInstance = null;
+
+    function t(key) { return I18N[lang][key] || key; }
+    function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function rowActions(id) {
+      return `<span class="row-actions">
+        <button type="button" class="edit-btn" data-id="${id}" aria-label="${t('editBtn')}">✎</button>
+        <button type="button" class="del-btn" data-id="${id}" aria-label="${t('deleteBtn')}">✕</button>
+      </span>`;
+    }
+    async function confirmDelete(storeName, id, reloadFn) {
+      if (!confirm(t('confirmDelete'))) return;
+      const items = await db.getAll(storeName);
+      const snapshot = items.find(x => x.id === id);
+      await db.delete(storeName, id);
+      await reloadFn();
+      await loadDashboard();
+      if (snapshot) showUndoToast(t('undoDelete'), async () => {
+        await db.add(storeName, snapshot);
+        await reloadFn();
+        await loadDashboard();
+      });
+    }
+
+    let toastTimeoutId = null;
+    function hideToast() {
+      const action = document.getElementById('toastAction');
+      document.getElementById('toast').classList.add('hidden');
+      action.onclick = null;
+      action.classList.add('hidden');
+    }
+    function showUndoToast(msg, onUndo) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      const action = document.getElementById('toastAction');
+      action.textContent = t('undoAction');
+      action.classList.remove('hidden');
+      toast.classList.remove('hidden');
+      if (toastTimeoutId) clearTimeout(toastTimeoutId);
+      action.onclick = async () => { hideToast(); await onUndo(); };
+      toastTimeoutId = setTimeout(hideToast, 5000);
+    }
+    function showToast(msg, ms = 3000) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      document.getElementById('toastAction').classList.add('hidden');
+      toast.classList.remove('hidden');
+      if (toastTimeoutId) clearTimeout(toastTimeoutId);
+      toastTimeoutId = setTimeout(hideToast, ms);
+    }
+    // Edit-mode tracking per form
+    const editState = { maintenance: null, fuel: null, mods: null, parts: null };
+    function setEditBanner(formEl, labelText, onCancel) {
+      let banner = formEl.querySelector('.edit-banner');
+      if (!labelText) {
+        if (banner) banner.remove();
+        return;
+      }
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.className = 'edit-banner';
+        formEl.prepend(banner);
+      }
+      banner.innerHTML = `<span>${escHtml(labelText)}</span><button type="button" class="btn">${escHtml(t('cancelEdit'))}</button>`;
+      banner.querySelector('button').onclick = onCancel;
+    }
+
+    function progressBar(pct) {
+      const clamped = Math.min(pct, 100);
+      const cls = pct >= 100 ? 'over' : pct >= 80 ? 'warn' : '';
+      return `<div class="progress-bar"><div class="progress-bar-fill ${cls}" style="width:${clamped}%"></div></div>`;
+    }
+
+    function estimateVehicleValue(vehicle) {
+      if (vehicle.manualValue) return { value: vehicle.manualValue, manual: true };
+      if (!vehicle.purchasePrice || !vehicle.purchaseDate) return null;
+      const years = (Date.now() - new Date(vehicle.purchaseDate).getTime()) / (365.25 * 24 * 3600 * 1000);
+      if (years < 0) return { value: vehicle.purchasePrice, manual: false };
+      return { value: vehicle.purchasePrice * Math.pow(0.85, years), manual: false };
+    }
+
     async function loadDashboard() {
       const vehicle = (await db.getAll('vehicles')).find(v => v.id === activeVehicleId);
       if (!vehicle) return;
+      const metaBits = [];
+      if (vehicle.color) metaBits.push(`<span>${escHtml(vehicle.color)}</span>`);
+      if (vehicle.plate) metaBits.push(`<span>Plate ${escHtml(vehicle.plate)}</span>`);
+      if (vehicle.vin) metaBits.push(`<span>VIN …${escHtml(vehicle.vin.slice(-4))}</span>`);
+      if (vehicle.purchaseDate) metaBits.push(`<span>Bought ${escHtml(vehicle.purchaseDate)}</span>`);
       document.getElementById('vehicleCard').innerHTML = `
-        <p><strong>${vehicle.nickname}</strong></p>
-        <p>${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.trim}</p>
-        <p>Odometer: ${vehicle.odometer} mi</p>
+        <p><strong>${escHtml(vehicle.nickname)}</strong></p>
+        <p>${escHtml(vehicle.year)} ${escHtml(vehicle.make)} ${escHtml(vehicle.model)} ${escHtml(vehicle.trim || '')}</p>
+        <p>Odometer: ${escHtml(vehicle.odometer)} mi</p>
+        ${metaBits.length ? `<p class="vehicle-meta">${metaBits.join('')}</p>` : ''}
       `;
-      // Recent maintenance
-      const maintenance = (await db.getAll('maintenance')).filter(m => m.vehicleId === activeVehicleId).sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,5);
-      document.getElementById('recentMaintenance').innerHTML = maintenance.map(m => `<li>${m.date}: ${m.type} - $${m.cost}</li>`).join('');
-      // Recent fuel
-      const fuel = (await db.getAll('fuel')).filter(f => f.vehicleId === activeVehicleId).sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,5);
-      document.getElementById('recentFuel').innerHTML = fuel.map(f => `<li>${f.date}: ${f.gallons} gal - $${f.cost} (${f.mpg ? f.mpg + ' MPG' : ''})</li>`).join('');
-      // Top mods
-      const mods = (await db.getAll('mods')).filter(m => m.vehicleId === activeVehicleId && m.installed).sort((a,b) => b.cost - a.cost).slice(0,3);
-      document.getElementById('topMods').innerHTML = mods.map(m => `<li>${m.part}: $${m.cost}</li>`).join('');
-      // Cost chart
+
+      const currentOdometer = vehicle.odometer;
+      const now = new Date();
+      const currentDate = now.toISOString().split('T')[0];
       const allMaintenance = (await db.getAll('maintenance')).filter(m => m.vehicleId === activeVehicleId);
       const allFuel = (await db.getAll('fuel')).filter(f => f.vehicleId === activeVehicleId);
       const allMods = (await db.getAll('mods')).filter(m => m.vehicleId === activeVehicleId);
+
+      // Service reminders with severity (exclude dismissed)
+      const reminders = allMaintenance.filter(m => !m.reminderDismissed).map(m => {
+        let severity = null;
+        let milesLabel = '';
+        let dateLabel = '';
+        if (m.nextDueMiles) {
+          const delta = m.nextDueMiles - currentOdometer;
+          if (delta <= 0) severity = 'overdue';
+          else if (delta <= 500) severity = severity || 'due-soon';
+          else severity = severity || 'upcoming';
+          milesLabel = ` at ${m.nextDueMiles} mi`;
+        }
+        if (m.nextDueDate) {
+          const due = new Date(m.nextDueDate);
+          const days = (due - now) / (24 * 3600 * 1000);
+          if (days <= 0) severity = 'overdue';
+          else if (days <= 30 && severity !== 'overdue') severity = 'due-soon';
+          else if (!severity) severity = 'upcoming';
+          dateLabel = ` by ${m.nextDueDate}`;
+        }
+        return severity ? { m, severity, milesLabel, dateLabel } : null;
+      }).filter(Boolean);
+      const active = reminders.filter(r => r.severity !== 'upcoming').concat(reminders.filter(r => r.severity === 'upcoming').slice(0, 3));
+      document.getElementById('serviceReminders').innerHTML = active.length > 0
+        ? active.map(r => {
+            const tag = r.severity === 'overdue' ? ` (${t('overdue')})` : r.severity === 'due-soon' ? ` (${t('dueSoon')})` : '';
+            return `<li class="reminder-item ${r.severity}">${escHtml(r.m.type)}${r.milesLabel}${r.dateLabel}${tag}
+              <span class="reminder-actions">
+                <button type="button" class="reminder-btn reminder-snooze" data-id="${r.m.id}">${escHtml(t('snoozeBtn'))}</button>
+                <button type="button" class="reminder-btn reminder-dismiss" data-id="${r.m.id}">${escHtml(t('dismissBtn'))}</button>
+              </span>
+            </li>`;
+          }).join('')
+        : '<li>No upcoming service reminders</li>';
+
+      // Budget card (this month + year)
+      const monthKey = currentDate.slice(0, 7);
+      const yearKey = currentDate.slice(0, 4);
+      const monthSpend = allMaintenance.filter(m => (m.date || '').startsWith(monthKey)).reduce((s, m) => s + (m.cost || 0), 0);
+      const yearSpend = allMaintenance.filter(m => (m.date || '').startsWith(yearKey)).reduce((s, m) => s + (m.cost || 0), 0);
+      const budgetCard = document.getElementById('budgetMonthCard');
+      const budgetTitle = document.getElementById('budgetCardTitle');
+      if (vehicle.monthlyBudget && vehicle.annualBudget) budgetTitle.textContent = t('budgetMonthAndYear');
+      else if (vehicle.annualBudget) budgetTitle.textContent = t('budgetYearOnly');
+      else budgetTitle.textContent = t('budgetThisMonth');
+      if (vehicle.monthlyBudget || vehicle.annualBudget) {
+        const parts = [];
+        if (vehicle.monthlyBudget) {
+          const pct = (monthSpend / vehicle.monthlyBudget) * 100;
+          parts.push(`<div class="stat-big">$${monthSpend.toFixed(0)} / $${vehicle.monthlyBudget}</div>${progressBar(pct)}<div class="stat-sub">${pct.toFixed(0)}% ${t('ofBudget')} · ${t('budgetThisMonth')}</div>`);
+        }
+        if (vehicle.annualBudget) {
+          const pct = (yearSpend / vehicle.annualBudget) * 100;
+          parts.push(`<div class="stat-big">$${yearSpend.toFixed(0)} / $${vehicle.annualBudget}</div>${progressBar(pct)}<div class="stat-sub">${pct.toFixed(0)}% ${t('ofBudget')} · ${t('budgetThisYear')}</div>`);
+        }
+        budgetCard.innerHTML = parts.join('<hr style="opacity:0.2;margin:0.75rem 0">');
+      } else {
+        budgetCard.innerHTML = `<p class="stat-sub">${t('noBudgetSet')}</p>`;
+      }
+
+      // MPG Goal card
+      const fuelSorted = [...allFuel].sort((a, b) => new Date(a.date) - new Date(b.date));
+      let prevFull = null;
+      const mpgs = [];
+      fuelSorted.forEach(f => {
+        if (f.fullTank && prevFull) {
+          const mpg = (f.odometer - prevFull.odometer) / prevFull.gallons;
+          if (mpg > 0 && mpg < 100) mpgs.push(mpg);
+        }
+        if (f.fullTank) prevFull = f;
+      });
+      const last5Avg = mpgs.length ? mpgs.slice(-5).reduce((a, b) => a + b, 0) / Math.min(mpgs.length, 5) : 0;
+      const mpgCard = document.getElementById('mpgGoalCard');
+      if (vehicle.mpgGoal) {
+        const delta = last5Avg - vehicle.mpgGoal;
+        const cls = delta >= 0 ? 'positive' : 'negative';
+        const sign = delta >= 0 ? '+' : '';
+        mpgCard.innerHTML = `
+          <div class="stat-big">${last5Avg.toFixed(1)} <span class="stat-sub">/ ${vehicle.mpgGoal} goal</span></div>
+          <div class="stat-delta ${cls}">${sign}${delta.toFixed(1)} MPG</div>
+        `;
+      } else {
+        mpgCard.innerHTML = last5Avg > 0
+          ? `<div class="stat-big">${last5Avg.toFixed(1)} MPG</div><p class="stat-sub">${t('noGoalSet')}</p>`
+          : `<p class="stat-sub">${t('noGoalSet')}</p>`;
+      }
+
+      // Vehicle value card
+      const valueCard = document.getElementById('vehicleValueCard');
+      const valueInfo = estimateVehicleValue(vehicle);
+      if (valueInfo !== null) {
+        const { value, manual } = valueInfo;
+        if (manual) {
+          valueCard.innerHTML = `
+            <div class="stat-big">$${Math.round(value).toLocaleString()}</div>
+            <div class="stat-sub">${t('manualValueHint')}</div>
+          `;
+        } else {
+          const loss = vehicle.purchasePrice - value;
+          const pct = vehicle.purchasePrice > 0 ? (loss / vehicle.purchasePrice) * 100 : 0;
+          valueCard.innerHTML = `
+            <div class="stat-big">$${Math.round(value).toLocaleString()}</div>
+            <div class="stat-delta negative">-$${Math.round(loss).toLocaleString()} ${t('depreciation')}</div>
+            <div class="stat-sub">${pct.toFixed(0)}% from $${vehicle.purchasePrice.toLocaleString()}</div>
+          `;
+        }
+      } else {
+        valueCard.innerHTML = `<p class="stat-sub">${t('noPriceSet')}</p>`;
+      }
+
+      // Recent maintenance
+      const recentMaint = [...allMaintenance].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+      document.getElementById('recentMaintenance').innerHTML = recentMaint.length
+        ? recentMaint.map(m => `<li>${escHtml(m.date)}: ${escHtml(m.type)} - $${(m.cost||0).toFixed(2)}</li>`).join('')
+        : `<li class="empty-state">${t('noRecentMaintenance')}</li>`;
+      // Recent fuel
+      const recentFuel = [...allFuel].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+      document.getElementById('recentFuel').innerHTML = recentFuel.length
+        ? recentFuel.map(f => `<li>${escHtml(f.date)}: ${f.gallons} gal - $${f.cost.toFixed(2)}</li>`).join('')
+        : `<li class="empty-state">${t('noRecentFuel')}</li>`;
+      // Top mods
+      const topMods = allMods.filter(m => m.installed).sort((a, b) => b.cost - a.cost).slice(0, 3);
+      document.getElementById('topMods').innerHTML = topMods.length
+        ? topMods.map(m => `<li>${escHtml(m.part)}: $${(m.cost||0).toFixed(2)}</li>`).join('')
+        : `<li class="empty-state">${t('noMods')}</li>`;
+
+      // Cost chart + TCO
       const maintCost = allMaintenance.reduce((sum, m) => sum + (m.cost || 0), 0);
       const fuelCost = allFuel.reduce((sum, f) => sum + f.cost, 0);
       const modCost = allMods.reduce((sum, m) => sum + (m.cost || 0), 0);
-      new Chart(document.getElementById('costChart'), {
+      const tcoTotal = maintCost + fuelCost + modCost;
+      document.getElementById('tcoCard').innerHTML = `
+        <div class="stat-big">$${tcoTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        <div class="stat-sub">${t('tcoMaintenance')} $${maintCost.toFixed(2)} · ${t('tcoFuel')} $${fuelCost.toFixed(2)} · ${t('tcoMods')} $${modCost.toFixed(2)}</div>
+      `;
+
+      // Monthly spend trend (last 12 months)
+      const months = [];
+      const labels = [];
+      const monthDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(monthDate);
+        d.setMonth(d.getMonth() - i);
+        months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+        labels.push(d.toLocaleDateString(lang, { month: 'short', year: '2-digit' }));
+      }
+      const monthSum = (items, costKey = 'cost') => months.map(m => items.filter(x => (x.date || '').startsWith(m)).reduce((s, x) => s + (x[costKey] || 0), 0));
+      const maintSeries = monthSum(allMaintenance);
+      const fuelSeries = monthSum(allFuel);
+      const modsSeries = monthSum(allMods);
+      if (monthlyChartInstance) monthlyChartInstance.destroy();
+      monthlyChartInstance = new Chart(document.getElementById('monthlyChart'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Maintenance', data: maintSeries, backgroundColor: '#d97706' },
+            { label: 'Fuel', data: fuelSeries, backgroundColor: '#f59e0b' },
+            { label: 'Mods', data: modsSeries, backgroundColor: '#fbbf24' }
+          ]
+        },
+        options: { responsive: true, scales: { x: { stacked: true }, y: { stacked: true } } }
+      });
+      if (costChartInstance) costChartInstance.destroy();
+      costChartInstance = new Chart(document.getElementById('costChart'), {
         type: 'pie',
         data: {
           labels: ['Maintenance', 'Fuel', 'Mods'],
           datasets: [{ data: [maintCost, fuelCost, modCost], backgroundColor: ['#d97706', '#f59e0b', '#fbbf24'] }]
         }
       });
+
+      // Populate Edit Vehicle form for active vehicle
+      document.getElementById('eNickname').value = vehicle.nickname || '';
+      document.getElementById('eMake').value = vehicle.make || '';
+      document.getElementById('eModel').value = vehicle.model || '';
+      document.getElementById('eYear').value = vehicle.year || '';
+      document.getElementById('eTrim').value = vehicle.trim || '';
+      document.getElementById('eColor').value = vehicle.color || '';
+      document.getElementById('eVin').value = vehicle.vin || '';
+      document.getElementById('ePlate').value = vehicle.plate || '';
+      document.getElementById('ePurchaseDate').value = vehicle.purchaseDate || '';
+      document.getElementById('eOdometer').value = vehicle.odometer || '';
+      document.getElementById('ePurchasePrice').value = vehicle.purchasePrice || '';
+      document.getElementById('eMpgGoal').value = vehicle.mpgGoal || '';
+      document.getElementById('eMonthlyBudget').value = vehicle.monthlyBudget || '';
+      document.getElementById('eAnnualBudget').value = vehicle.annualBudget || '';
+      document.getElementById('eManualValue').value = vehicle.manualValue || '';
     }
+
+    // Maintenance receipt photo
+    let maintPhotoDataUrl = null;
+    document.getElementById('mPhotoFile').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const preview = document.getElementById('mPhotoPreview');
+      if (!file) { maintPhotoDataUrl = null; preview.classList.add('hidden'); preview.removeAttribute('src'); return; }
+      const reader = new FileReader();
+      reader.onload = (ev) => { maintPhotoDataUrl = ev.target.result; preview.src = maintPhotoDataUrl; preview.classList.remove('hidden'); };
+      reader.readAsDataURL(file);
+    });
+
+    // Service reminders snooze/dismiss
+    document.getElementById('serviceReminders').addEventListener('click', async (e) => {
+      const snooze = e.target.closest('.reminder-snooze');
+      const dismiss = e.target.closest('.reminder-dismiss');
+      if (!snooze && !dismiss) return;
+      const id = (snooze || dismiss).dataset.id;
+      const items = await db.getAll('maintenance');
+      const m = items.find(x => x.id === id);
+      if (!m) return;
+      if (snooze) {
+        if (m.nextDueMiles) m.nextDueMiles += 500;
+        if (m.nextDueDate) {
+          const d = new Date(m.nextDueDate);
+          d.setDate(d.getDate() + 30);
+          m.nextDueDate = d.toISOString().split('T')[0];
+        }
+        await db.put('maintenance', m);
+        showToast(t('snoozed'));
+      } else {
+        m.reminderDismissed = true;
+        await db.put('maintenance', m);
+      }
+      await loadDashboard();
+    });
+
+    // Quick templates
+    const MAINT_TEMPLATES = {
+      oil: { type: 'Oil change', miles: 5000, months: 6 },
+      tireRotation: { type: 'Tire rotation', miles: 7500, months: 6 },
+      brakeFluid: { type: 'Brake fluid', miles: 30000, months: 24 },
+      transmission: { type: 'Transmission fluid', miles: 60000, months: 36 },
+      airFilter: { type: 'Air filter', miles: 30000, months: 24 },
+      cabinFilter: { type: 'Cabin filter', miles: 20000, months: 12 },
+      sparkPlugs: { type: 'Spark plugs', miles: 60000, months: 0 },
+      coolant: { type: 'Coolant', miles: 50000, months: 36 },
+      battery: { type: 'Battery', miles: 50000, months: 48 }
+    };
+    document.getElementById('mTemplate').addEventListener('change', (e) => {
+      const tpl = MAINT_TEMPLATES[e.target.value];
+      if (!tpl) return;
+      document.getElementById('mType').value = tpl.type;
+      document.getElementById('mIntervalMiles').value = tpl.miles || '';
+      document.getElementById('mIntervalMonths').value = tpl.months || '';
+      const details = document.querySelector('.interval-details');
+      if (details) details.open = true;
+      if (!document.getElementById('mDate').value) {
+        document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
+      }
+    });
 
     // Maintenance
     document.getElementById('maintenanceForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const odometer = +document.getElementById('mOdometer').value;
+      const date = document.getElementById('mDate').value;
+      const intervalMiles = +document.getElementById('mIntervalMiles').value || 0;
+      const intervalMonths = +document.getElementById('mIntervalMonths').value || 0;
+
+      if (!await confirmIfOdometerRegresses(odometer, editState.maintenance)) return;
+
+      // Duplicate detection: same vehicle, same date, same type, odometer within 50 mi
+      if (!editState.maintenance) {
+        const all = await db.getAll('maintenance');
+        const typeVal = document.getElementById('mType').value === 'Other' ? document.getElementById('mOtherType').value : document.getElementById('mType').value;
+        const dup = all.some(x => x.vehicleId === activeVehicleId && x.date === date && x.type === typeVal && Math.abs((x.odometer || 0) - odometer) < 50);
+        if (dup && !confirm(t('duplicateWarn'))) return;
+      }
+      
+      let nextDueMiles = null;
+      let nextDueDate = null;
+      
+      if (intervalMiles > 0) {
+        nextDueMiles = odometer + intervalMiles;
+      }
+      
+      if (intervalMonths > 0) {
+        const dueDate = new Date(date);
+        dueDate.setMonth(dueDate.getMonth() + intervalMonths);
+        nextDueDate = dueDate.toISOString().split('T')[0];
+      }
+      
       const data = {
-        id: crypto.randomUUID(),
+        id: editState.maintenance || crypto.randomUUID(),
         vehicleId: activeVehicleId,
-        date: document.getElementById('mDate').value,
-        odometer: +document.getElementById('mOdometer').value,
+        date: date,
+        odometer: odometer,
         type: document.getElementById('mType').value === 'Other' ? document.getElementById('mOtherType').value : document.getElementById('mType').value,
         shop: document.getElementById('mShop').checked,
         cost: +document.getElementById('mCost').value || 0,
-        notes: document.getElementById('mNotes').value
+        notes: document.getElementById('mNotes').value,
+        intervalMiles: intervalMiles || null,
+        intervalMonths: intervalMonths || null,
+        nextDueMiles: nextDueMiles,
+        nextDueDate: nextDueDate,
+        reminderShown: false,
+        photo: maintPhotoDataUrl
       };
-      await db.add('maintenance', data);
-      loadDashboard();
+      if (editState.maintenance) {
+        await db.put('maintenance', data);
+        exitMaintenanceEdit();
+      } else {
+        await db.add('maintenance', data);
+      }
+      await bumpVehicleOdometer(odometer);
+      maintPhotoDataUrl = null;
+      document.getElementById('mPhotoPreview').classList.add('hidden');
+      document.getElementById('mPhotoPreview').removeAttribute('src');
+      await loadMaintenance();
+      await loadDashboard();
       e.target.reset();
+      document.getElementById('mOtherType').classList.add('hidden');
+      document.getElementById('mDate').focus();
+    });
+
+    function exitMaintenanceEdit() {
+      editState.maintenance = null;
+      setEditBanner(document.getElementById('maintenanceForm'), '', null);
+      const btn = document.querySelector('#maintenanceForm button[type="submit"]');
+      btn.textContent = t('addEntry');
+    }
+
+    // Maintenance list edit/delete
+    document.getElementById('maintenanceList').addEventListener('click', async (e) => {
+      const delEl = e.target.closest('.del-btn');
+      if (delEl) {
+        await confirmDelete('maintenance', delEl.dataset.id, loadMaintenance);
+        return;
+      }
+      const editEl = e.target.closest('.edit-btn');
+      if (editEl) {
+        const items = await db.getAll('maintenance');
+        const m = items.find(x => x.id === editEl.dataset.id);
+        if (!m) return;
+        editState.maintenance = m.id;
+        document.getElementById('mDate').value = m.date || '';
+        document.getElementById('mOdometer').value = m.odometer || '';
+        const known = Array.from(document.getElementById('mType').options).some(o => o.value === m.type);
+        if (known) {
+          document.getElementById('mType').value = m.type;
+          document.getElementById('mOtherType').value = '';
+          document.getElementById('mOtherType').classList.add('hidden');
+        } else {
+          document.getElementById('mType').value = 'Other';
+          document.getElementById('mOtherType').value = m.type;
+          document.getElementById('mOtherType').classList.remove('hidden');
+        }
+        document.getElementById('mShop').checked = !!m.shop;
+        document.getElementById('mCost').value = m.cost || '';
+        document.getElementById('mNotes').value = m.notes || '';
+        document.getElementById('mIntervalMiles').value = m.intervalMiles || '';
+        document.getElementById('mIntervalMonths').value = m.intervalMonths || '';
+        maintPhotoDataUrl = m.photo || null;
+        const mPreview = document.getElementById('mPhotoPreview');
+        if (m.photo) { mPreview.src = m.photo; mPreview.classList.remove('hidden'); }
+        else { mPreview.classList.add('hidden'); mPreview.removeAttribute('src'); }
+        const form = document.getElementById('maintenanceForm');
+        setEditBanner(form, `${t('editingEntry')} ${m.type}`, () => { form.reset(); exitMaintenanceEdit(); maintPhotoDataUrl = null; mPreview.classList.add('hidden'); mPreview.removeAttribute('src'); });
+        form.querySelector('button[type="submit"]').textContent = t('updateEntry');
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+
+    // mType -> show/hide Other input
+    document.getElementById('mType').addEventListener('change', (e) => {
+      document.getElementById('mOtherType').classList.toggle('hidden', e.target.value !== 'Other');
     });
 
     // Fuel
     document.getElementById('fuelForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const odometer = +document.getElementById('fOdometer').value;
+      const gallons = +document.getElementById('fGallons').value;
+      let cost = +document.getElementById('fCost').value || 0;
+      const price = +document.getElementById('fPrice').value || 0;
+      if (!cost && price && gallons) cost = +(price * gallons).toFixed(2);
+      if (!cost) { showToast(t('missingCost')); return; }
+      if (!await confirmIfOdometerRegresses(odometer, editState.fuel)) return;
       const data = {
-        id: crypto.randomUUID(),
+        id: editState.fuel || crypto.randomUUID(),
         vehicleId: activeVehicleId,
         date: document.getElementById('fDate').value,
-        odometer: +document.getElementById('fOdometer').value,
-        gallons: +document.getElementById('fGallons').value,
-        cost: +document.getElementById('fCost').value,
+        odometer: odometer,
+        gallons: gallons,
+        cost: cost,
         station: document.getElementById('fStation').value,
         fullTank: document.getElementById('fFullTank').checked,
         octane: +document.getElementById('fOctane').value || null
       };
-      await db.add('fuel', data);
-      loadFuel();
-      loadDashboard();
+      if (editState.fuel) {
+        await db.put('fuel', data);
+        exitFuelEdit();
+      } else {
+        await db.add('fuel', data);
+      }
+      await bumpVehicleOdometer(odometer);
+      await loadFuel();
+      await loadDashboard();
       e.target.reset();
+      document.getElementById('fFullTank').checked = true;
+      document.getElementById('fDate').focus();
+    });
+
+    function exitFuelEdit() {
+      editState.fuel = null;
+      setEditBanner(document.getElementById('fuelForm'), '', null);
+      document.querySelector('#fuelForm button[type="submit"]').textContent = t('addEntry');
+    }
+
+    // Fuel list edit/delete
+    document.getElementById('fuelList').addEventListener('click', async (e) => {
+      const delEl = e.target.closest('.del-btn');
+      if (delEl) {
+        await confirmDelete('fuel', delEl.dataset.id, loadFuel);
+        return;
+      }
+      const editEl = e.target.closest('.edit-btn');
+      if (editEl) {
+        const items = await db.getAll('fuel');
+        const f = items.find(x => x.id === editEl.dataset.id);
+        if (!f) return;
+        editState.fuel = f.id;
+        document.getElementById('fDate').value = f.date || '';
+        document.getElementById('fOdometer').value = f.odometer || '';
+        document.getElementById('fGallons').value = f.gallons || '';
+        document.getElementById('fCost').value = f.cost || '';
+        document.getElementById('fPrice').value = f.gallons ? (f.cost / f.gallons).toFixed(3) : '';
+        document.getElementById('fStation').value = f.station || '';
+        document.getElementById('fFullTank').checked = !!f.fullTank;
+        document.getElementById('fOctane').value = f.octane || '';
+        const form = document.getElementById('fuelForm');
+        setEditBanner(form, `${t('editingEntry')} ${f.date}`, () => { form.reset(); exitFuelEdit(); });
+        form.querySelector('button[type="submit"]').textContent = t('updateEntry');
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     });
 
     async function loadFuel() {
       const fuel = (await db.getAll('fuel')).filter(f => f.vehicleId === activeVehicleId).sort((a,b) => new Date(a.date) - new Date(b.date));
-      // Calculate MPG
       let prevFull = null;
       fuel.forEach(f => {
         if (f.fullTank && prevFull) {
@@ -611,20 +1479,20 @@
         }
         if (f.fullTank) prevFull = f;
       });
-      // Charts
       const mpgData = fuel.filter(f => f.mpg).map(f => ({ x: new Date(f.date), y: f.mpg }));
-      new Chart(document.getElementById('mpgChart'), {
+      if (mpgChartInstance) mpgChartInstance.destroy();
+      mpgChartInstance = new Chart(document.getElementById('mpgChart'), {
         type: 'line',
         data: { datasets: [{ label: 'MPG', data: mpgData, borderColor: '#d97706' }] },
         options: { scales: { x: { type: 'time' } } }
       });
       const priceData = fuel.map(f => ({ x: new Date(f.date), y: f.cost / f.gallons }));
-      new Chart(document.getElementById('priceChart'), {
+      if (priceChartInstance) priceChartInstance.destroy();
+      priceChartInstance = new Chart(document.getElementById('priceChart'), {
         type: 'line',
         data: { datasets: [{ label: '$/gal', data: priceData, borderColor: '#f59e0b' }] },
         options: { scales: { x: { type: 'time' } } }
       });
-      // Stats
       const mpgs = fuel.filter(f => f.mpg).map(f => f.mpg);
       const avgMpg = mpgs.length ? mpgs.reduce((a,b)=>a+b)/mpgs.length : 0;
       const last5 = mpgs.slice(-5);
@@ -637,29 +1505,203 @@
         <p>Total Gallons: ${totalGal.toFixed(1)}</p>
         <p>Total Cost: $${totalCost.toFixed(2)}</p>
       `;
-      document.getElementById('fuelList').innerHTML = fuel.slice(-10).reverse().map(f => `<li>${f.date}: ${f.gallons} gal @ $${(f.cost/f.gallons).toFixed(2)}/gal ${f.mpg ? `- ${f.mpg.toFixed(1)} MPG` : ''}</li>`).join('');
+      renderFuelList(fuel);
     }
 
-    // Mods
+    function renderFuelList(fuel) {
+      const query = (document.getElementById('fuelSearch')?.value || '').toLowerCase().trim();
+      const filtered = query
+        ? fuel.filter(f => [f.date, f.station, f.octane, f.gallons, f.cost].some(v => String(v || '').toLowerCase().includes(query)))
+        : fuel;
+      const list = document.getElementById('fuelList');
+      list.className = 'entry-list';
+      if (!filtered.length) {
+        list.innerHTML = `<li class="empty-state">${t(query ? 'noResults' : 'noRecentFuel')}</li>`;
+        return;
+      }
+      list.innerHTML = filtered.slice().reverse().map(f => `
+        <li>
+          <span class="entry-main">${escHtml(f.date)}: ${f.gallons} gal @ $${(f.cost/f.gallons).toFixed(2)}/gal · ${f.mpg ? `${f.mpg.toFixed(1)} MPG` : '— MPG'}${f.station ? ` · ${escHtml(f.station)}` : ''}${f.fullTank ? '' : ' · partial'}</span>
+          ${rowActions(f.id)}
+        </li>
+      `).join('');
+    }
+
+    async function loadMaintenance() {
+      const items = (await db.getAll('maintenance')).filter(m => m.vehicleId === activeVehicleId).sort((a,b) => new Date(b.date) - new Date(a.date));
+      renderMaintenanceList(items);
+    }
+
+    function renderMaintenanceList(items) {
+      const list = document.getElementById('maintenanceList');
+      list.className = 'entry-list';
+      if (items.length === 0) {
+        list.innerHTML = `<li class="empty-state">${t('maintenanceHistoryEmpty')}</li>`;
+        return;
+      }
+      const query = (document.getElementById('maintenanceSearch')?.value || '').toLowerCase().trim();
+      const filtered = query
+        ? items.filter(m => [m.date, m.type, m.notes, m.odometer, m.cost].some(v => String(v || '').toLowerCase().includes(query)))
+        : items;
+      if (!filtered.length) {
+        list.innerHTML = `<li class="empty-state">${t('noResults')}</li>`;
+        return;
+      }
+      list.innerHTML = filtered.map(m => `
+        <li>
+          <span class="entry-main">${m.photo ? `<img src="${escHtml(m.photo)}" class="photo-thumb" alt="">` : ''}${escHtml(m.date)} · ${escHtml(m.type)} · ${escHtml(m.odometer)} mi · $${(m.cost||0).toFixed(2)} · ${m.shop ? 'Shop' : 'DIY'}${m.notes ? ` · ${escHtml(m.notes)}` : ''}</span>
+          ${rowActions(m.id)}
+        </li>
+      `).join('');
+    }
+
+    // Search wires
+    document.getElementById('maintenanceSearch').addEventListener('input', async () => {
+      const items = (await db.getAll('maintenance')).filter(m => m.vehicleId === activeVehicleId).sort((a,b) => new Date(b.date) - new Date(a.date));
+      renderMaintenanceList(items);
+    });
+    document.getElementById('fuelSearch').addEventListener('input', async () => {
+      const fuel = (await db.getAll('fuel')).filter(f => f.vehicleId === activeVehicleId).sort((a,b) => new Date(a.date) - new Date(b.date));
+      let prevFull = null;
+      fuel.forEach(f => {
+        if (f.fullTank && prevFull) f.mpg = (f.odometer - prevFull.odometer) / prevFull.gallons;
+        if (f.fullTank) prevFull = f;
+      });
+      renderFuelList(fuel);
+    });
+
+    function approxMonthsBetween(fromDate, toDate) {
+      const from = new Date(fromDate), to = new Date(toDate);
+      return (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
+    }
+
+    async function maxOdometerSoFar(excludeId = null) {
+      if (!activeVehicleId) return 0;
+      const [m, f, v] = await Promise.all([db.getAll('maintenance'), db.getAll('fuel'), db.getAll('vehicles')]);
+      const vehicle = v.find(x => x.id === activeVehicleId);
+      const vals = [vehicle?.odometer || 0];
+      for (const x of m) if (x.vehicleId === activeVehicleId && x.id !== excludeId) vals.push(x.odometer || 0);
+      for (const x of f) if (x.vehicleId === activeVehicleId && x.id !== excludeId) vals.push(x.odometer || 0);
+      return Math.max(...vals);
+    }
+
+    async function confirmIfOdometerRegresses(newOdo, excludeId) {
+      const maxOdo = await maxOdometerSoFar(excludeId);
+      if (newOdo < maxOdo) return confirm(t('odometerWarn') + ` (max: ${maxOdo})`);
+      return true;
+    }
+
+    async function bumpVehicleOdometer(newOdo) {
+      if (!activeVehicleId || !newOdo) return;
+      const vehicles = await db.getAll('vehicles');
+      const vehicle = vehicles.find(v => v.id === activeVehicleId);
+      if (!vehicle) return;
+      if (newOdo > (vehicle.odometer || 0)) {
+        vehicle.odometer = newOdo;
+        vehicle.updatedAt = new Date();
+        await db.put('vehicles', vehicle);
+      }
+    }
+
+    async function loadParts() {
+      const items = (await db.getAll('parts')).filter(p => p.vehicleId === activeVehicleId).sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+      renderParts(items);
+    }
+
+    function renderParts(items) {
+      const list = document.getElementById('partsList');
+      list.className = 'entry-list';
+      if (items.length === 0) {
+        list.innerHTML = `<li class="empty-state">${t('partsInventoryEmpty')}</li>`;
+        return;
+      }
+      const query = (document.getElementById('partsSearch')?.value || '').toLowerCase().trim();
+      const filtered = query
+        ? items.filter(p => [p.name, p.location].some(v => String(v || '').toLowerCase().includes(query)))
+        : items;
+      if (!filtered.length) {
+        list.innerHTML = `<li class="empty-state">${t('noPartsMatch')}</li>`;
+        return;
+      }
+      list.innerHTML = filtered.map(p => `
+        <li>
+          <span class="entry-main">${escHtml(p.name)} · ${p.quantity || 1}x${p.location ? ` · ${escHtml(p.location)}` : ''}</span>
+          ${rowActions(p.id)}
+        </li>
+      `).join('');
+    }
+
+    document.getElementById('partsSearch').addEventListener('input', async () => {
+      const items = (await db.getAll('parts')).filter(p => p.vehicleId === activeVehicleId).sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+      renderParts(items);
+    });
+
+    // Mods — read photo as data URL
+    let modPhotoDataUrl = null;
+    document.getElementById('modPhotoFile').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const preview = document.getElementById('modPhotoPreview');
+      if (!file) {
+        modPhotoDataUrl = null;
+        preview.classList.add('hidden');
+        preview.removeAttribute('src');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        modPhotoDataUrl = ev.target.result;
+        preview.src = modPhotoDataUrl;
+        preview.classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // modInstalled toggle shows/hides Removed-on date
+    document.getElementById('modInstalled').addEventListener('change', (e) => {
+      document.getElementById('modRemovedDate').classList.toggle('hidden', e.target.checked);
+      if (!e.target.checked && !document.getElementById('modRemovedDate').value) {
+        document.getElementById('modRemovedDate').value = new Date().toISOString().split('T')[0];
+      }
+    });
+
     document.getElementById('modsForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const installed = document.getElementById('modInstalled').checked;
       const data = {
-        id: crypto.randomUUID(),
+        id: editState.mods || crypto.randomUUID(),
         vehicleId: activeVehicleId,
         date: document.getElementById('modDate').value,
         category: document.getElementById('modCategory').value,
         part: document.getElementById('modPart').value,
         brand: document.getElementById('modBrand').value,
         cost: +document.getElementById('modCost').value || 0,
-        installedBy: document.getElementById('modInstalledBy').value,
+        shop: document.getElementById('modShop').checked,
         notes: document.getElementById('modNotes').value,
-        installed: document.getElementById('modInstalled').checked
+        installed: installed,
+        removedDate: installed ? null : (document.getElementById('modRemovedDate').value || null),
+        photo: modPhotoDataUrl
       };
-      await db.add('mods', data);
+      if (editState.mods) {
+        await db.put('mods', data);
+        exitModsEdit();
+      } else {
+        await db.add('mods', data);
+      }
+      modPhotoDataUrl = null;
+      document.getElementById('modPhotoPreview').classList.add('hidden');
+      document.getElementById('modPhotoPreview').removeAttribute('src');
       loadMods();
       loadDashboard();
       e.target.reset();
+      document.getElementById('modRemovedDate').classList.add('hidden');
+      document.getElementById('modDate').focus();
     });
+
+    function exitModsEdit() {
+      editState.mods = null;
+      setEditBanner(document.getElementById('modsForm'), '', null);
+      document.querySelector('#modsForm button[type="submit"]').textContent = t('addMod');
+    }
 
     // Vehicle
     document.getElementById('vehicleForm').addEventListener('submit', async (e) => {
@@ -676,6 +1718,10 @@
         plate: document.getElementById('vPlate').value,
         purchaseDate: document.getElementById('vPurchaseDate').value,
         odometer: +document.getElementById('vOdometer').value || 0,
+        purchasePrice: +document.getElementById('vPurchasePrice').value || null,
+        mpgGoal: +document.getElementById('vMpgGoal').value || null,
+        monthlyBudget: +document.getElementById('vMonthlyBudget').value || null,
+        annualBudget: +document.getElementById('vAnnualBudget').value || null,
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -684,51 +1730,315 @@
       e.target.reset();
     });
 
-    async function loadMods() {
+    // Edit active vehicle (replaces old Goals form)
+    document.getElementById('editVehicleForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const vehicles = await db.getAll('vehicles');
+      const vehicle = vehicles.find(v => v.id === activeVehicleId);
+      if (!vehicle) return;
+      vehicle.nickname = document.getElementById('eNickname').value || vehicle.nickname;
+      vehicle.make = document.getElementById('eMake').value || vehicle.make;
+      vehicle.model = document.getElementById('eModel').value || vehicle.model;
+      vehicle.year = +document.getElementById('eYear').value || vehicle.year;
+      vehicle.trim = document.getElementById('eTrim').value;
+      vehicle.color = document.getElementById('eColor').value;
+      vehicle.vin = document.getElementById('eVin').value;
+      vehicle.plate = document.getElementById('ePlate').value;
+      vehicle.purchaseDate = document.getElementById('ePurchaseDate').value;
+      vehicle.odometer = +document.getElementById('eOdometer').value || 0;
+      vehicle.purchasePrice = +document.getElementById('ePurchasePrice').value || null;
+      vehicle.mpgGoal = +document.getElementById('eMpgGoal').value || null;
+      vehicle.monthlyBudget = +document.getElementById('eMonthlyBudget').value || null;
+      vehicle.annualBudget = +document.getElementById('eAnnualBudget').value || null;
+      vehicle.manualValue = +document.getElementById('eManualValue').value || null;
+      vehicle.updatedAt = new Date();
+      await db.put('vehicles', vehicle);
+      await loadVehicles();
+      showToast(t('savedMsg'));
+    });
+
+    document.getElementById('deleteVehicleBtn').addEventListener('click', async () => {
+      if (!activeVehicleId) return;
+      if (!confirm(t('confirmDeleteVehicle'))) return;
+      // cascade: delete this vehicle's maintenance, fuel, mods, parts
+      for (const store of ['maintenance', 'fuel', 'mods', 'parts']) {
+        const items = (await db.getAll(store)).filter(x => x.vehicleId === activeVehicleId);
+        for (const it of items) await db.delete(store, it.id);
+      }
+      await db.delete('vehicles', activeVehicleId);
+      activeVehicleId = null;
+      localStorage.removeItem('activeVehicleId');
+      await loadVehicles();
+    });
+
+    // Service history report
+    document.getElementById('reportBtn').addEventListener('click', async () => {
+      const vehicle = (await db.getAll('vehicles')).find(v => v.id === activeVehicleId);
+      if (!vehicle) return;
+      const maint = (await db.getAll('maintenance')).filter(m => m.vehicleId === activeVehicleId).sort((a,b) => new Date(a.date) - new Date(b.date));
+      const fuel = (await db.getAll('fuel')).filter(f => f.vehicleId === activeVehicleId);
       const mods = (await db.getAll('mods')).filter(m => m.vehicleId === activeVehicleId);
+      const maintTotal = maint.reduce((s, m) => s + (m.cost || 0), 0);
+      const fuelTotal = fuel.reduce((s, f) => s + f.cost, 0);
+      const modTotal = mods.reduce((s, m) => s + (m.cost || 0), 0);
+      const fuelGallons = fuel.reduce((s, f) => s + f.gallons, 0);
+      const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="UTF-8"><title>${t('reportTitle')}</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #111; padding: 2rem; max-width: 800px; margin: 0 auto; }
+  h1 { border-bottom: 2px solid #92400e; padding-bottom: 0.5rem; }
+  h2 { margin-top: 2rem; border-bottom: 1px solid #ccc; padding-bottom: 0.25rem; }
+  table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+  th, td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+  th { background: #f4f4f4; }
+  .totals { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+  .total-box { border: 1px solid #ddd; border-radius: 6px; padding: 0.75rem; }
+  .total-box strong { display: block; font-size: 1.2rem; }
+  .meta { color: #555; font-size: 0.85rem; }
+  button { padding: 0.5rem 1rem; background: #92400e; color: white; border: 0; border-radius: 4px; cursor: pointer; }
+  @media print { button { display: none; } }
+</style></head><body>
+<h1>${t('reportTitle')}</h1>
+<p class="meta">${t('reportGenerated')}: ${new Date().toLocaleString()}</p>
+<button onclick="window.print()">${t('reportPrint')}</button>
+<h2>${t('reportVehicle')}</h2>
+<p><strong>${esc(vehicle.nickname)}</strong> — ${esc(vehicle.year)} ${esc(vehicle.make)} ${esc(vehicle.model)} ${esc(vehicle.trim || '')}</p>
+<p class="meta">VIN: ${esc(vehicle.vin || '—')} · ${t('reportOdometer')}: ${esc(vehicle.odometer)} mi${vehicle.purchaseDate ? ' · Purchased: ' + esc(vehicle.purchaseDate) : ''}${vehicle.purchasePrice ? ' · Purchase price: $' + vehicle.purchasePrice.toLocaleString() : ''}</p>
+<h2>${t('reportTotals')}</h2>
+<div class="totals">
+  <div class="total-box"><span class="meta">${t('reportMaintenance')}</span><strong>$${maintTotal.toFixed(2)}</strong><span class="meta">${maint.length} entries</span></div>
+  <div class="total-box"><span class="meta">${t('reportFuel')}</span><strong>$${fuelTotal.toFixed(2)}</strong><span class="meta">${fuelGallons.toFixed(1)} gal</span></div>
+  <div class="total-box"><span class="meta">${t('reportMods')}</span><strong>$${modTotal.toFixed(2)}</strong><span class="meta">${mods.length} items</span></div>
+</div>
+<h2>${t('reportMaintenance')}</h2>
+<table><thead><tr><th>Date</th><th>${t('reportOdometer')}</th><th>Type</th><th>Shop/DIY</th><th>Cost</th><th>Notes</th></tr></thead><tbody>
+${maint.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.odometer)}</td><td>${esc(m.type)}</td><td>${m.shop ? 'Shop' : 'DIY'}</td><td>$${(m.cost||0).toFixed(2)}</td><td>${esc(m.notes || '')}</td></tr>`).join('')}
+</tbody></table>
+<h2>${t('reportMods')}</h2>
+<table><thead><tr><th>Date</th><th>Category</th><th>Part</th><th>Brand</th><th>Cost</th><th>Installed</th></tr></thead><tbody>
+${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc(m.part)}</td><td>${esc(m.brand || '')}</td><td>$${(m.cost||0).toFixed(2)}</td><td>${m.installed ? 'Yes' : 'No'}</td></tr>`).join('')}
+</tbody></table>
+</body></html>`;
+      const win = window.open('', '_blank');
+      if (!win) { alert('Popup blocked — please allow popups to view the report.'); return; }
+      win.document.write(html);
+      win.document.close();
+    });
+
+    async function loadMods() {
+      const all = (await db.getAll('mods')).filter(m => m.vehicleId === activeVehicleId);
+      renderMods(all);
+    }
+
+    function renderMods(all) {
+      const query = (document.getElementById('modsSearch')?.value || '').toLowerCase().trim();
+      const mods = query
+        ? all.filter(m => [m.part, m.brand, m.category, m.notes, m.date].some(v => String(v || '').toLowerCase().includes(query)))
+        : all;
+      const container = document.getElementById('modsList');
+      if (!all.length) { container.innerHTML = `<p class="empty-state">${t('noMods')}</p>`; return; }
+      if (!mods.length) { container.innerHTML = `<p class="empty-state">${t('noModsMatch')}</p>`; return; }
       const grouped = mods.reduce((acc, m) => {
         acc[m.category] = acc[m.category] || [];
         acc[m.category].push(m);
         return acc;
       }, {});
-      document.getElementById('modsList').innerHTML = Object.entries(grouped).map(([cat, ms]) => `
-        <h3>${cat}</h3>
-        <ul>${ms.map(m => `<li>${m.part} (${m.brand}) - $${m.cost} ${m.installed ? '' : '(Removed)'}</li>`).join('')}</ul>
-        <p>Total: $${ms.reduce((sum,m)=>sum+m.cost,0)}</p>
+      container.innerHTML = Object.entries(grouped).map(([cat, ms]) => `
+        <h3>${escHtml(cat)}</h3>
+        <ul class="entry-list">${ms.map(m => {
+          const isShop = (typeof m.shop === 'boolean') ? m.shop : (m.installedBy && /shop/i.test(m.installedBy));
+          const removed = !m.installed ? (m.removedDate ? ` (${t('removedOn')} ${escHtml(m.removedDate)})` : ' (Removed)') : '';
+          return `
+          <li>
+            <span class="entry-main">${m.photo ? `<img src="${escHtml(m.photo)}" class="photo-thumb" alt="">` : ''}${escHtml(m.part)}${m.brand ? ` (${escHtml(m.brand)})` : ''} · $${(m.cost||0).toFixed(2)} · ${isShop ? 'Shop' : 'DIY'}${removed}</span>
+            ${rowActions(m.id)}
+          </li>`;
+        }).join('')}</ul>
+        <p>Total: $${ms.reduce((sum,m)=>sum+(m.cost||0),0).toFixed(2)}</p>
       `).join('');
     }
 
+    document.getElementById('modsSearch').addEventListener('input', async () => {
+      const all = (await db.getAll('mods')).filter(m => m.vehicleId === activeVehicleId);
+      renderMods(all);
+    });
+
+    // Mods list edit/delete
+    document.getElementById('modsList').addEventListener('click', async (e) => {
+      const delEl = e.target.closest('.del-btn');
+      if (delEl) {
+        await confirmDelete('mods', delEl.dataset.id, loadMods);
+        return;
+      }
+      const editEl = e.target.closest('.edit-btn');
+      if (editEl) {
+        const items = await db.getAll('mods');
+        const m = items.find(x => x.id === editEl.dataset.id);
+        if (!m) return;
+        editState.mods = m.id;
+        document.getElementById('modDate').value = m.date || '';
+        document.getElementById('modCategory').value = m.category || 'Other';
+        document.getElementById('modPart').value = m.part || '';
+        document.getElementById('modBrand').value = m.brand || '';
+        document.getElementById('modCost').value = m.cost || '';
+        const legacyShop = (typeof m.shop === 'boolean') ? m.shop : (m.installedBy && /shop/i.test(m.installedBy)) || false;
+        document.getElementById('modShop').checked = legacyShop;
+        document.getElementById('modNotes').value = m.notes || '';
+        document.getElementById('modInstalled').checked = !!m.installed;
+        document.getElementById('modRemovedDate').value = m.removedDate || '';
+        document.getElementById('modRemovedDate').classList.toggle('hidden', !!m.installed);
+        modPhotoDataUrl = m.photo || null;
+        const preview = document.getElementById('modPhotoPreview');
+        if (m.photo) { preview.src = m.photo; preview.classList.remove('hidden'); }
+        else { preview.classList.add('hidden'); preview.removeAttribute('src'); }
+        const form = document.getElementById('modsForm');
+        setEditBanner(form, `${t('editingEntry')} ${m.part}`, () => { form.reset(); exitModsEdit(); modPhotoDataUrl = null; preview.classList.add('hidden'); preview.removeAttribute('src'); document.getElementById('modRemovedDate').classList.add('hidden'); });
+        form.querySelector('button[type="submit"]').textContent = t('updateEntry');
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+
+    // Parts form + list
+    document.getElementById('partsForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!activeVehicleId) return;
+      const data = {
+        id: editState.parts || crypto.randomUUID(),
+        vehicleId: activeVehicleId,
+        name: document.getElementById('partName').value,
+        quantity: +document.getElementById('partQuantity').value || 1,
+        location: document.getElementById('partLocation').value,
+        createdAt: new Date()
+      };
+      if (editState.parts) {
+        await db.put('parts', data);
+        exitPartsEdit();
+      } else {
+        await db.add('parts', data);
+      }
+      await loadParts();
+      e.target.reset();
+      document.getElementById('partQuantity').value = 1;
+      document.getElementById('partName').focus();
+    });
+
+    function exitPartsEdit() {
+      editState.parts = null;
+      setEditBanner(document.getElementById('partsForm'), '', null);
+      document.querySelector('#partsForm button[type="submit"]').textContent = t('addPart');
+    }
+
+    document.getElementById('partsList').addEventListener('click', async (e) => {
+      const delEl = e.target.closest('.del-btn');
+      if (delEl) {
+        await confirmDelete('parts', delEl.dataset.id, loadParts);
+        return;
+      }
+      const editEl = e.target.closest('.edit-btn');
+      if (editEl) {
+        const items = await db.getAll('parts');
+        const p = items.find(x => x.id === editEl.dataset.id);
+        if (!p) return;
+        editState.parts = p.id;
+        document.getElementById('partName').value = p.name || '';
+        document.getElementById('partQuantity').value = p.quantity || 1;
+        document.getElementById('partLocation').value = p.location || '';
+        const form = document.getElementById('partsForm');
+        setEditBanner(form, `${t('editingEntry')} ${p.name}`, () => { form.reset(); exitPartsEdit(); });
+        form.querySelector('button[type="submit"]').textContent = t('updateEntry');
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+
     // Settings
+    function toCsv(rows) {
+      if (!rows.length) return '';
+      const cols = Object.keys(rows[0]);
+      const esc = (v) => {
+        if (v == null) return '';
+        const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      return [cols.join(','), ...rows.map(r => cols.map(c => esc(r[c])).join(','))].join('\n');
+    }
+
+    document.getElementById('exportCsvBtn').addEventListener('click', async () => {
+      const vehicle = activeVehicleId ? (await db.getAll('vehicles')).find(v => v.id === activeVehicleId) : null;
+      const pick = (arr) => activeVehicleId ? arr.filter(x => x.vehicleId === activeVehicleId) : arr;
+      const datasets = {
+        maintenance: pick(await db.getAll('maintenance')).map(({ photo, ...rest }) => rest),
+        fuel: pick(await db.getAll('fuel')),
+        mods: pick(await db.getAll('mods')).map(({ photo, ...rest }) => rest),
+        parts: pick(await db.getAll('parts'))
+      };
+      const slug = (vehicle?.nickname || 'all').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'all';
+      const today = new Date().toISOString().split('T')[0];
+      for (const [name, rows] of Object.entries(datasets)) {
+        if (!rows.length) continue;
+        const blob = new Blob([toCsv(rows)], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `biteric-jeep-${slug}-${name}-${today}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    });
+
     document.getElementById('exportBtn').addEventListener('click', async () => {
       const data = {
         vehicles: await db.getAll('vehicles'),
         maintenance: await db.getAll('maintenance'),
         fuel: await db.getAll('fuel'),
-        mods: await db.getAll('mods')
+        mods: await db.getAll('mods'),
+        parts: await db.getAll('parts')
       };
       const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'biteric-jeep-data.json';
+      const activeVehicle = data.vehicles.find(v => v.id === activeVehicleId);
+      const slug = (activeVehicle?.nickname || 'all').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'all';
+      const today = new Date().toISOString().split('T')[0];
+      a.download = `biteric-jeep-${slug}-${today}.json`;
       a.click();
+      URL.revokeObjectURL(url);
     });
+
+    function validateImport(data) {
+      if (!data || typeof data !== 'object' || Array.isArray(data)) return 'not an object';
+      if (!Array.isArray(data.vehicles)) return 'vehicles must be an array';
+      for (const v of data.vehicles) {
+        if (!v || typeof v !== 'object' || typeof v.id !== 'string' || typeof v.nickname !== 'string') return 'invalid vehicle entry';
+      }
+      for (const key of ['maintenance', 'fuel', 'mods', 'parts']) {
+        if (data[key] !== undefined && !Array.isArray(data[key])) return `${key} must be an array`;
+        for (const it of data[key] || []) {
+          if (!it || typeof it !== 'object' || typeof it.id !== 'string') return `invalid ${key} entry (missing id)`;
+        }
+      }
+      return null;
+    }
 
     document.getElementById('importBtn').addEventListener('click', async () => {
       const file = document.getElementById('importFile').files[0];
       if (!file) return;
-      const text = await file.text();
-      const data = JSON.parse(text);
-      if (confirm('Replace all data?')) {
-        await db.clear('vehicles');
-        await db.clear('maintenance');
-        await db.clear('fuel');
-        await db.clear('mods');
-        for (const v of data.vehicles) await db.add('vehicles', v);
-        for (const m of data.maintenance) await db.add('maintenance', m);
-        for (const f of data.fuel) await db.add('fuel', f);
-        for (const mod of data.mods) await db.add('mods', mod);
-      }
+      let data;
+      try { data = JSON.parse(await file.text()); }
+      catch { showToast(t('importInvalid'), 5000); return; }
+      const err = validateImport(data);
+      if (err) { showToast(t('importInvalid') + ' (' + err + ')', 6000); return; }
+      if (!confirm('Replace all data?')) return;
+      await db.clear('vehicles');
+      await db.clear('maintenance');
+      await db.clear('fuel');
+      await db.clear('mods');
+      await db.clear('parts');
+      for (const v of data.vehicles) await db.add('vehicles', v);
+      for (const m of data.maintenance || []) await db.add('maintenance', m);
+      for (const f of data.fuel || []) await db.add('fuel', f);
+      for (const mod of data.mods || []) await db.add('mods', mod);
+      for (const p of data.parts || []) await db.add('parts', p);
       loadVehicles();
     });
 
@@ -737,6 +2047,10 @@
       activeVehicleId = document.getElementById('vehicleSelect').value;
       localStorage.setItem('activeVehicleId', activeVehicleId);
       loadDashboard();
+      loadMaintenance();
+      loadFuel();
+      loadMods();
+      loadParts();
     });
 
     document.getElementById('langToggle').addEventListener('click', () => {
@@ -753,6 +2067,7 @@
         await db.clear('maintenance');
         await db.clear('fuel');
         await db.clear('mods');
+        await db.clear('parts');
         localStorage.clear();
         location.reload();
       }
@@ -793,6 +2108,7 @@
       await db.clear('maintenance');
       await db.clear('fuel');
       await db.clear('mods');
+      await db.clear('parts');
       await loadApp();
       document.getElementById('loader').style.display = 'none';
     });
@@ -803,28 +2119,25 @@
 
     document.getElementById('importLoaderFile').addEventListener('change', async (e) => {
       const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          try {
-            const data = JSON.parse(event.target.result);
-            await db.clear('vehicles');
-            await db.clear('maintenance');
-            await db.clear('fuel');
-            await db.clear('mods');
-            for (const v of data.vehicles || []) await db.add('vehicles', v);
-            for (const m of data.maintenance || []) await db.add('maintenance', m);
-            for (const f of data.fuel || []) await db.add('fuel', f);
-            for (const mod of data.mods || []) await db.add('mods', mod);
-            showLoaderSpinner(true);
-            await loadApp();
-            document.getElementById('loader').style.display = 'none';
-          } catch (err) {
-            alert('Invalid file format');
-          }
-        };
-        reader.readAsText(file);
-      }
+      if (!file) return;
+      let data;
+      try { data = JSON.parse(await file.text()); }
+      catch { showToast(t('importInvalid'), 5000); return; }
+      const err = validateImport(data);
+      if (err) { showToast(t('importInvalid') + ' (' + err + ')', 6000); return; }
+      await db.clear('vehicles');
+      await db.clear('maintenance');
+      await db.clear('fuel');
+      await db.clear('mods');
+      await db.clear('parts');
+      for (const v of data.vehicles) await db.add('vehicles', v);
+      for (const m of data.maintenance || []) await db.add('maintenance', m);
+      for (const f of data.fuel || []) await db.add('fuel', f);
+      for (const mod of data.mods || []) await db.add('mods', mod);
+      for (const p of data.parts || []) await db.add('parts', p);
+      showLoaderSpinner(true);
+      await loadApp();
+      document.getElementById('loader').style.display = 'none';
     });
 
     document.getElementById('clearCacheLoaderBtn').addEventListener('click', async () => {
@@ -838,12 +2151,30 @@
             caches.delete(name);
           }
         });
-        alert(I18N[lang].cacheCleared || 'Cache cleared');
+        showToast(I18N[lang].cacheCleared || 'Cache cleared');
       }
     });
 
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+    });
+
+    // Keyboard: 1-6 switches tabs, Escape cancels edit
+    const tabOrder = ['dashboard', 'maintenance', 'fuel', 'mods', 'parts', 'settings'];
+    document.addEventListener('keydown', (e) => {
+      if (document.getElementById('loader').style.display !== 'none') return;
+      const tag = document.activeElement?.tagName;
+      const inField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+      if (!inField && !e.metaKey && !e.ctrlKey && !e.altKey && /^[1-6]$/.test(e.key)) {
+        e.preventDefault();
+        switchTab(tabOrder[+e.key - 1]);
+      }
+      if (e.key === 'Escape') {
+        if (editState.maintenance) { document.getElementById('maintenanceForm').reset(); exitMaintenanceEdit(); }
+        if (editState.fuel) { document.getElementById('fuelForm').reset(); exitFuelEdit(); }
+        if (editState.mods) { document.getElementById('modsForm').reset(); exitModsEdit(); }
+        if (editState.parts) { document.getElementById('partsForm').reset(); exitPartsEdit(); }
+      }
     });
 
     // PWA install
@@ -860,12 +2191,39 @@
         deferredPrompt.userChoice.then(() => {
           deferredPrompt = null;
           document.getElementById('installBtn').classList.add('hidden');
+          refreshInstallStatus();
         });
       } else {
-        // Fallback for iOS
-        alert('To install on iOS: tap Share > Add to Home Screen');
+        showToast(t('installHelpIos'), 5000);
       }
     });
+
+    // Offline indicator
+    function updateOnlineStatus() { document.body.classList.toggle('offline', !navigator.onLine); }
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus();
+
+    // Install status block in Settings
+    function refreshInstallStatus() {
+      const el = document.getElementById('installStatus');
+      if (!el) return;
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      if (standalone) {
+        el.textContent = t('installedStatus');
+      } else if (deferredPrompt) {
+        el.innerHTML = '';
+        const b = document.createElement('button');
+        b.className = 'btn';
+        b.textContent = t('installAsApp');
+        b.onclick = () => document.getElementById('installBtn').click();
+        el.appendChild(b);
+      } else {
+        const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        el.textContent = isIos ? t('installHelpIos') : t('installHelpOther');
+      }
+    }
+    window.addEventListener('beforeinstallprompt', refreshInstallStatus);
 
     // Service worker
     if ('serviceWorker' in navigator) {
@@ -881,6 +2239,7 @@
       await db.clear('maintenance');
       await db.clear('fuel');
       await db.clear('mods');
+      await db.clear('parts');
       const demoVehicles = [
         { id: crypto.randomUUID(), nickname: 'Wrangler Demo', make: 'Jeep', model: 'Wrangler', year: 2022, trim: 'Rubicon', color: 'Orange', vin: 'DEMOWRANG123', plate: 'DEMO1', purchaseDate: '2023-01-01', odometer: 15200, createdAt: new Date(), updatedAt: new Date() },
         { id: crypto.randomUUID(), nickname: 'Gladiator Demo', make: 'Jeep', model: 'Gladiator', year: 2023, trim: 'Overland', color: 'Gray', vin: 'DEMGLAD123', plate: 'DEMO2', purchaseDate: '2023-03-01', odometer: 9800, createdAt: new Date(), updatedAt: new Date() }
@@ -907,7 +2266,8 @@
       await db.clear('maintenance');
       await db.clear('fuel');
       await db.clear('mods');
-      const demoVehicle = { id: crypto.randomUUID(), nickname: 'Wrangler Demo', make: 'Jeep', model: 'Wrangler', year: 2022, trim: 'Rubicon', color: 'Orange', vin: 'DEMOWRANG123', plate: 'DEMO1', purchaseDate: '2023-01-01', odometer: 15200, createdAt: new Date(), updatedAt: new Date() };
+      await db.clear('parts');
+      const demoVehicle = { id: crypto.randomUUID(), nickname: 'Wrangler Demo', make: 'Jeep', model: 'Wrangler', year: 2022, trim: 'Rubicon', color: 'Orange', vin: 'DEMOWRANG123', plate: 'DEMO1', purchaseDate: '2023-01-01', odometer: 15200, purchasePrice: 48000, mpgGoal: 18, monthlyBudget: 200, annualBudget: 1800, createdAt: new Date(), updatedAt: new Date() };
       await db.add('vehicles', demoVehicle);
       const demoMaintenance = [
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-06-15', odometer: 12000, type: 'Oil change', shop: true, cost: 85, notes: 'First oil change at dealer' },
@@ -957,7 +2317,8 @@
       await db.clear('maintenance');
       await db.clear('fuel');
       await db.clear('mods');
-      const demoVehicle = { id: crypto.randomUUID(), nickname: 'Gladiator Demo', make: 'Jeep', model: 'Gladiator', year: 2023, trim: 'Overland', color: 'Gray', vin: 'DEMGLAD123', plate: 'DEMO2', purchaseDate: '2023-03-01', odometer: 9800, createdAt: new Date(), updatedAt: new Date() };
+      await db.clear('parts');
+      const demoVehicle = { id: crypto.randomUUID(), nickname: 'Gladiator Demo', make: 'Jeep', model: 'Gladiator', year: 2023, trim: 'Overland', color: 'Gray', vin: 'DEMGLAD123', plate: 'DEMO2', purchaseDate: '2023-03-01', odometer: 9800, purchasePrice: 52000, mpgGoal: 22, monthlyBudget: 250, annualBudget: 2400, createdAt: new Date(), updatedAt: new Date() };
       await db.add('vehicles', demoVehicle);
       const demoMaintenance = [
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-06-01', odometer: 8500, type: 'Oil change', shop: true, cost: 95, notes: 'First service at dealer' },
@@ -1011,6 +2372,9 @@
       switchTab(lastTab);
       loadFuel();
       loadMods();
+      loadMaintenance();
+      loadParts();
+      refreshInstallStatus();
     }
 
     // Init
