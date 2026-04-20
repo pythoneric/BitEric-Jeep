@@ -72,6 +72,23 @@ test('toast has live-region semantics', async ({ page }) => {
   await expect(page.locator('#toast')).toHaveAttribute('aria-live', 'polite');
 });
 
+test('.hidden utility always collapses the element (cascade regression)', async ({ page }) => {
+  await startFresh(page);
+  // `.toast { display: flex }` and `.photo-preview { display: block }` both
+  // come after `.hidden { display: none }` — with equal specificity the later
+  // rule wins, so the toast was rendering as a floating empty square. `.hidden`
+  // must use !important so the utility always collapses the element.
+  for (const sel of ['#toast', '#mPhotoPreview', '#modPhotoPreview']) {
+    const display = await page.evaluate((s) => {
+      const el = document.querySelector(s);
+      return el ? { cls: el.className, display: getComputedStyle(el).display } : null;
+    }, sel);
+    expect(display).not.toBeNull();
+    expect(display.cls).toContain('hidden');
+    expect(display.display).toBe('none');
+  }
+});
+
 test('focus-visible outlines are defined for interactive elements', async ({ page }) => {
   await startFresh(page);
   const rules = await page.evaluate(() => {
