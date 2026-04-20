@@ -1480,6 +1480,28 @@
       if (header) header.innerHTML = flag;
       if (loader) loader.innerHTML = flag;
       document.documentElement.lang = lang;
+      // Dynamic content (empty states, dashboard cards, reminder severity tags,
+      // saved-data counts, cache info, install hint) is rendered by JS via t()
+      // and isn't tagged with data-i18n — re-run those renderers so nothing
+      // stays in the old language.
+      refreshLocalizedContent();
+    }
+
+    async function refreshLocalizedContent() {
+      const loaderEl = document.getElementById('loader');
+      const appRunning = loaderEl && loaderEl.style.display === 'none';
+      if (appRunning) {
+        try { await loadDashboard(); } catch {}
+        try { await loadMaintenance(); } catch {}
+        try { await loadFuel(); } catch {}
+        try { await loadMods(); } catch {}
+        try { await loadParts(); } catch {}
+        try { await loadTrails(); } catch {}
+        try { refreshInstallStatus(); } catch {}
+        try { refreshCacheInfo(); } catch {}
+      } else {
+        try { await checkSavedData(); } catch {}
+      }
     }
 
     function setTheme(newTheme) {
