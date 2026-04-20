@@ -63,6 +63,42 @@ test('tabs carry accessible role and are keyboard-activatable', async ({ page })
   await expect(page.locator('[data-tab="fuel"]')).toHaveClass(/active/);
 });
 
+test('Jeep Wrangler icon is rendered in the header', async ({ page }) => {
+  await startFresh(page);
+  const icon = page.locator('header .app-icon');
+  await expect(icon).toBeVisible();
+  const box = await icon.boundingBox();
+  expect(box.width).toBeGreaterThan(16);
+  expect(box.height).toBeGreaterThan(12);
+});
+
+test('light theme keeps header + tabs readable (regression)', async ({ page }) => {
+  await startFresh(page);
+  await page.click('#themeToggle');
+  const colors = await page.evaluate(() => {
+    const toRgb = (s) => s.match(/\d+/g).slice(0, 3).map(Number);
+    const luma = (rgb) => 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+    const contrast = (a, b) => {
+      const [L1, L2] = [luma(a), luma(b)].sort((x, y) => y - x);
+      return (L1 + 12.75) / (L2 + 12.75); // rough luminance ratio (0-255 scale)
+    };
+    const headerBg = toRgb(getComputedStyle(document.querySelector('header')).backgroundColor);
+    const titleCol = toRgb(getComputedStyle(document.querySelector('.app-title')).color);
+    const tabsBg = toRgb(getComputedStyle(document.querySelector('nav.tabs')).backgroundColor);
+    const tabCol = toRgb(getComputedStyle(document.querySelector('.tab')).color);
+    return {
+      headerBgLuma: luma(headerBg),
+      titleVsHeader: contrast(headerBg, titleCol),
+      tabVsTabs: contrast(tabsBg, tabCol),
+    };
+  });
+  // Light theme header must be bright (regression guard for the dark header bug)
+  expect(colors.headerBgLuma).toBeGreaterThan(180);
+  // Title and tab text must contrast meaningfully against their backgrounds
+  expect(colors.titleVsHeader).toBeGreaterThan(1.8);
+  expect(colors.tabVsTabs).toBeGreaterThan(1.8);
+});
+
 test('active tab persists across reload', async ({ page }) => {
   await startFresh(page);
   await switchTab(page, 'fuel');
