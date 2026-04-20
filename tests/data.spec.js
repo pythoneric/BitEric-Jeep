@@ -68,11 +68,9 @@ test('drag-and-drop JSON shows the drop overlay', async ({ page }) => {
   });
 });
 
-test('Reload Cache button triggers a confirmation toast and reload', async ({ page }) => {
+test('Header refresh clears cache, shows toast, reloads into loader', async ({ page }) => {
   await startFresh(page);
-  await switchTab(page, 'settings');
-  // navigation on reload will kill the page context; catch it via the load event
-  await page.click('#reloadBtn');
+  await page.click('#refreshBtn');
   await expect(page.locator('#toast:not(.hidden)')).toBeVisible();
   await expect(page.locator('#toastMsg')).toContainText(/Clearing|Limpiando/);
   // After a moment the page reloads and the loader should appear again

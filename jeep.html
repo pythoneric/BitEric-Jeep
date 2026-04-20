@@ -459,7 +459,6 @@
         <input type="file" id="importFile" accept=".json">
         <button id="importBtn" class="btn" data-i18n="importData">Import Data</button>
         <div id="cacheInfo"></div>
-        <button id="reloadBtn" class="btn" data-i18n="reloadCache">Reload Cache</button>
         <div id="installStatus" class="install-status"></div>
       </div>
     </div>
@@ -2244,9 +2243,19 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
       setTheme(theme === 'dark' ? 'light' : 'dark');
     });
 
-    document.getElementById('refreshBtn').addEventListener('click', () => {
-      location.reload();
-    });
+    async function hardReload() {
+      showToast(t('reloadingCache'));
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (const r of regs) await r.unregister();
+      }
+      if ('caches' in window) {
+        const names = await caches.keys();
+        for (const n of names) await caches.delete(n);
+      }
+      setTimeout(() => location.reload(), 500);
+    }
+    document.getElementById('refreshBtn').addEventListener('click', hardReload);
 
     document.getElementById('continueBtn').addEventListener('click', async () => {
       showLoaderSpinner(true);
@@ -2526,19 +2535,6 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
         el.textContent = `${t('cacheStatus')}: ${total} ${t('cacheItems')} · ${t('cacheSize')}: ${kb} KB`;
       } catch { el.textContent = ''; }
     }
-
-    document.getElementById('reloadBtn').addEventListener('click', async () => {
-      showToast(t('reloadingCache'));
-      if ('serviceWorker' in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        for (const r of regs) await r.unregister();
-      }
-      if ('caches' in window) {
-        const names = await caches.keys();
-        for (const n of names) await caches.delete(n);
-      }
-      setTimeout(() => location.reload(), 500);
-    });
 
     // Offline indicator
     function updateOnlineStatus() { document.body.classList.toggle('offline', !navigator.onLine); }
