@@ -25,18 +25,18 @@ test('Continue button + saved-data banner appear after first use', async ({ page
 test('Start Fresh dismisses loader and reveals app', async ({ page }) => {
   await startFresh(page);
   await expect(page.locator('#loader')).toBeHidden();
-  await expect(page.locator('#vehicleSelect')).toBeVisible();
+  await expect(page.locator('#vehicleSwitcher')).toBeVisible();
   await expect(page.locator('nav.tabs')).toBeVisible();
 });
 
 test('Demo SUV loads the Wrangler sample', async ({ page }) => {
   await loadDemoSUV(page);
-  await expect(page.locator('#vehicleSelect')).toContainText('Wrangler Demo');
+  await expect(page.locator('#vehicleSwitcher')).toContainText('Wrangler Demo');
 });
 
 test('Demo Truck loads the Gladiator sample', async ({ page }) => {
   await loadDemoTruck(page);
-  await expect(page.locator('#vehicleSelect')).toContainText('Gladiator Demo');
+  await expect(page.locator('#vehicleSwitcher')).toContainText('Gladiator Demo');
 });
 
 test('refresh button brings the loader back', async ({ page }) => {

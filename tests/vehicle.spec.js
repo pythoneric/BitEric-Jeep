@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { startFresh, loadDemoSUV, switchTab } from './helpers.js';
+import { openLoader, startFresh, loadDemoSUV, switchTab } from './helpers.js';
 
 test('can add a new vehicle', async ({ page }) => {
   await startFresh(page);
@@ -9,7 +9,7 @@ test('can add a new vehicle', async ({ page }) => {
   await page.fill('#vModel', 'Wrangler');
   await page.fill('#vYear', '2020');
   await page.click('#vehicleForm button[type="submit"]');
-  await expect(page.locator('#vehicleSelect')).toContainText('Test Jeep');
+  await expect(page.locator('#vehicleSwitcher')).toContainText('Test Jeep');
 });
 
 test('Edit Active Vehicle form is populated with active vehicle data', async ({ page }) => {
@@ -25,7 +25,7 @@ test('editing and saving a vehicle updates the selector', async ({ page }) => {
   await switchTab(page, 'settings');
   await page.fill('#eNickname', 'Renamed Jeep');
   await page.click('#editVehicleForm button[type="submit"]');
-  await expect(page.locator('#vehicleSelect')).toContainText('Renamed Jeep');
+  await expect(page.locator('#vehicleSwitcher')).toContainText('Renamed Jeep');
   await expect(page.locator('#toast:not(.hidden)')).toBeVisible();
 });
 
@@ -93,4 +93,50 @@ test('per-vehicle goals drive dashboard cards', async ({ page }) => {
   await expect(page.locator('#mpgGoalCard')).toContainText(/18/);
   // Budget card title adapts to what's set
   await expect(page.locator('#budgetCardTitle')).toContainText(/Budget|Presupuesto/);
+});
+
+test('vehicle switcher renders a car icon and one chip per vehicle', async ({ page }) => {
+  await loadDemoSUV(page);
+  await expect(page.locator('#vehicleSwitcher .vehicle-switcher-icon')).toHaveText('🚗');
+  await expect(page.locator('#vehicleSwitcher .vehicle-chip')).toHaveCount(1);
+  await expect(page.locator('#vehicleSwitcher .vehicle-chip.active')).toHaveText('Wrangler Demo');
+});
+
+test('adding a second vehicle appends a second chip without changing the active one', async ({ page }) => {
+  await loadDemoSUV(page);
+  await switchTab(page, 'settings');
+  await page.fill('#vNickname', 'Second Rig');
+  await page.fill('#vMake', 'Jeep');
+  await page.fill('#vModel', 'Gladiator');
+  await page.fill('#vYear', '2022');
+  await page.click('#vehicleForm button[type="submit"]');
+  await expect(page.locator('#vehicleSwitcher .vehicle-chip')).toHaveCount(2);
+  await expect(page.locator('#vehicleSwitcher')).toContainText('Second Rig');
+  // Active chip stays on the original demo vehicle
+  await expect(page.locator('#vehicleSwitcher .vehicle-chip.active')).toHaveText('Wrangler Demo');
+});
+
+test('clicking a chip switches the active vehicle and updates the dashboard', async ({ page }) => {
+  await loadDemoSUV(page);
+  await switchTab(page, 'settings');
+  await page.fill('#vNickname', 'Bronco Daily');
+  await page.fill('#vMake', 'Ford');
+  await page.fill('#vModel', 'Bronco');
+  await page.fill('#vYear', '2023');
+  await page.click('#vehicleForm button[type="submit"]');
+  await switchTab(page, 'dashboard');
+  await expect(page.locator('#vehicleCard')).toContainText('Wrangler');
+  await page.locator('#vehicleSwitcher .vehicle-chip', { hasText: 'Bronco Daily' }).click();
+  await expect(page.locator('#vehicleSwitcher .vehicle-chip.active')).toHaveText('Bronco Daily');
+  await expect(page.locator('#vehicleSwitcher .vehicle-chip.active')).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('#vehicleCard')).toContainText('Bronco');
+});
+
+test('empty-state placeholder appears after Start Fresh with no vehicles added', async ({ page }) => {
+  await openLoader(page);
+  await page.click('#startFreshBtn');
+  await page.waitForSelector('#loader', { state: 'hidden', timeout: 10000 });
+  await expect(page.locator('#vehicleSwitcher .vehicle-chip-empty')).toBeVisible();
+  await expect(page.locator('#vehicleSwitcher .vehicle-chip')).toHaveCount(0);
+  await expect(page.locator('#vehicleSwitcher .vehicle-chip-empty')).toHaveText(/Settings|Configuración/);
 });

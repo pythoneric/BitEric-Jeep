@@ -34,7 +34,7 @@ export async function startFresh(page) {
   await page.fill('#vModel', 'Wrangler');
   await page.fill('#vYear', '2020');
   await page.click('#vehicleForm button[type="submit"]');
-  await page.waitForFunction(() => document.querySelectorAll('#vehicleSelect option').length > 0);
+  await page.waitForFunction(() => document.querySelectorAll('#vehicleSwitcher .vehicle-chip').length > 0);
 }
 
 export async function loadDemoSUV(page) {

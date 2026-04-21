@@ -79,6 +79,16 @@
     .drivetrain-details > *, .followup-details > * { margin-top: 0.5rem; }
     .drivetrain-details > summary, .measurements-details > summary, .followup-details > summary { cursor: pointer; padding: 0.25rem 0; }
     .lang-btn { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .vehicle-switcher { display: inline-flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; max-width: 100%; }
+    .vehicle-switcher-icon { font-size: 1.1rem; line-height: 1; }
+    .vehicle-chip { background: transparent; color: var(--text); border: 1px solid var(--border); padding: 0.4rem 0.7rem; border-radius: 999px; cursor: pointer; font-size: 0.85rem; white-space: nowrap; transition: border-color 0.15s, background 0.15s, color 0.15s; }
+    body.light .vehicle-chip { color: var(--light-text); border-color: var(--light-border); }
+    .vehicle-chip:hover { border-color: var(--accent); color: var(--accent); }
+    body.light .vehicle-chip:hover { border-color: var(--light-accent); color: var(--light-accent); }
+    .vehicle-chip.active { background: var(--accent); color: white; border-color: var(--accent); font-weight: 600; }
+    body.light .vehicle-chip.active { background: var(--light-accent); border-color: var(--light-accent); color: white; }
+    .vehicle-chip.active:hover { color: white; }
+    .vehicle-chip-empty { opacity: 0.65; font-size: 0.85rem; font-style: italic; padding: 0.25rem 0.4rem; }
     .flag-icon { display: inline-flex; width: 1.2rem; height: 0.85rem; border-radius: 2px; overflow: hidden; box-shadow: 0 0 0 1px rgba(0,0,0,0.3); flex-shrink: 0; }
     .flag-icon svg { display: block; width: 100%; height: 100%; }
     .severe-service-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
@@ -250,7 +260,7 @@
       <span data-i18n="appTitle">BitEric Jeep</span>
     </div>
     <div class="controls">
-      <select id="vehicleSelect"></select>
+      <div class="vehicle-switcher" id="vehicleSwitcher" role="radiogroup" aria-label="Active vehicle"><span class="vehicle-switcher-icon" aria-hidden="true">🚗</span></div>
       <button id="langToggle" class="lang-btn"><span class="flag-icon" id="langFlag"></span><span data-i18n="langToggle">EN</span></button>
       <button id="themeToggle" data-i18n="themeToggle">🌙</button>
       <button id="refreshBtn" data-i18n="refreshBtn">🔄</button>
@@ -782,6 +792,7 @@
         tabTrails: "Trails",
         tabSettings: "Settings",
         vehicleCard: "Vehicle",
+        noVehicleYet: "No vehicle yet — add one in Settings",
         serviceReminders: "Service Reminders",
         recentMaintenance: "Recent Maintenance",
         recentFuel: "Recent Fuel",
@@ -1098,6 +1109,7 @@
         tabTrails: "Rutas",
         tabSettings: "Configuración",
         vehicleCard: "Vehículo",
+        noVehicleYet: "Sin vehículo — agrega uno en Configuración",
         serviceReminders: "Recordatorios de Servicio",
         recentMaintenance: "Mantenimiento Reciente",
         recentFuel: "Combustible Reciente",
@@ -1580,22 +1592,30 @@
 
     async function loadVehicles() {
       const vehicles = await db.getAll('vehicles');
-      const select = document.getElementById('vehicleSelect');
-      select.innerHTML = '';
-      vehicles.forEach(v => {
-        const option = document.createElement('option');
-        option.value = v.id;
-        option.textContent = v.nickname;
-        select.appendChild(option);
-      });
+      const switcher = document.getElementById('vehicleSwitcher');
+      switcher.querySelectorAll('.vehicle-chip, .vehicle-chip-empty').forEach(el => el.remove());
       if (!activeVehicleId || !vehicles.find(v => v.id === activeVehicleId)) {
         activeVehicleId = vehicles[0]?.id || null;
       }
-      if (activeVehicleId) {
-        select.value = activeVehicleId;
-        localStorage.setItem('activeVehicleId', activeVehicleId);
-      } else {
+      if (vehicles.length === 0) {
+        const empty = document.createElement('span');
+        empty.className = 'vehicle-chip-empty';
+        empty.textContent = t('noVehicleYet');
+        switcher.appendChild(empty);
         localStorage.removeItem('activeVehicleId');
+      } else {
+        vehicles.forEach(v => {
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          const isActive = v.id === activeVehicleId;
+          chip.className = 'vehicle-chip' + (isActive ? ' active' : '');
+          chip.dataset.id = v.id;
+          chip.setAttribute('role', 'radio');
+          chip.setAttribute('aria-checked', isActive ? 'true' : 'false');
+          chip.textContent = v.nickname;
+          switcher.appendChild(chip);
+        });
+        localStorage.setItem('activeVehicleId', activeVehicleId);
       }
       loadDashboard();
     }
@@ -2913,9 +2933,16 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
     });
 
     // Events
-    document.getElementById('vehicleSelect').addEventListener('change', () => {
-      activeVehicleId = document.getElementById('vehicleSelect').value;
+    document.getElementById('vehicleSwitcher').addEventListener('click', (e) => {
+      const chip = e.target.closest('.vehicle-chip');
+      if (!chip || chip.classList.contains('active')) return;
+      activeVehicleId = chip.dataset.id;
       localStorage.setItem('activeVehicleId', activeVehicleId);
+      document.querySelectorAll('#vehicleSwitcher .vehicle-chip').forEach(c => {
+        const on = c === chip;
+        c.classList.toggle('active', on);
+        c.setAttribute('aria-checked', on ? 'true' : 'false');
+      });
       loadDashboard();
       loadMaintenance();
       loadFuel();

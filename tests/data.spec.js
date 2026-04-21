@@ -23,14 +23,14 @@ test('JSON export uses vehicle nickname + date in filename', async ({ page }) =>
 
 test('invalid JSON import shows toast and does not wipe data', async ({ page }) => {
   await loadDemoSUV(page);
-  const before = await page.locator('#vehicleSelect option').count();
+  const before = await page.locator('#vehicleSwitcher .vehicle-chip').count();
   const bad = tmpWrite('invalid.json', JSON.stringify({ vehicles: 'not-an-array' }));
   await switchTab(page, 'settings');
   await page.setInputFiles('#importFile', bad);
   await page.click('#importBtn');
   await expect(page.locator('#toast:not(.hidden)')).toBeVisible();
   await expect(page.locator('#toastMsg')).toContainText(/Import failed|inválido/i);
-  await expect(page.locator('#vehicleSelect option')).toHaveCount(before);
+  await expect(page.locator('#vehicleSwitcher .vehicle-chip')).toHaveCount(before);
   fs.unlinkSync(bad);
 });
 
@@ -49,7 +49,7 @@ test('valid JSON import replaces data after confirmation', async ({ page }) => {
   await page.setInputFiles('#importFile', good);
   await page.click('#importBtn');
   await page.waitForTimeout(500);
-  await expect(page.locator('#vehicleSelect')).toContainText('Imported');
+  await expect(page.locator('#vehicleSwitcher')).toContainText('Imported');
   fs.unlinkSync(good);
 });
 
