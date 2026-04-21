@@ -729,6 +729,16 @@
       <button type="button" id="shortcutsClose" class="btn" style="margin-top: 1rem;" data-i18n="closeBtn">Close</button>
     </div>
   </div>
+  <div id="currencyModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="currencyModalTitle">
+    <div class="modal-card">
+      <h3 id="currencyModalTitle" data-i18n="pickCurrencyTitle">Pick a currency</h3>
+      <p class="stat-sub" data-i18n="pickCurrencyHint">This affects how prices are shown. You can change it later by starting fresh.</p>
+      <div style="display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap;">
+        <button type="button" id="currencyUsdBtn" class="btn" style="flex: 1 1 140px;" data-currency="USD">🇺🇸 <span data-i18n="currencyUsd">US$ Dollars</span></button>
+        <button type="button" id="currencyDopBtn" class="btn btn-outline" style="flex: 1 1 140px;" data-currency="DOP">🇩🇴 <span data-i18n="currencyDop">RD$ Pesos</span></button>
+      </div>
+    </div>
+  </div>
   <div id="loader" class="loader">
     <div class="loader-card">
       <div class="loader-hero">
@@ -842,7 +852,7 @@
         fuelLog: "Fuel Log",
         fullTank: "Full Tank",
         mpgChart: "MPG Over Time",
-        priceChart: "$/Gallon Over Time",
+        priceChart: "{cur}/Gallon Over Time",
         modsLog: "Modifications",
         suspension: "Suspension",
         tiresWheels: "Tires/Wheels",
@@ -886,10 +896,10 @@
         templateCoolant: "Coolant (50k mi / 36 mo)",
         templateBattery: "Battery check (50k mi / 48 mo)",
         printReport: "Print service report",
-        monthlyBudget: "Monthly budget (USD)",
-        annualBudget: "Annual budget (USD)",
+        monthlyBudget: "Monthly budget ({cur})",
+        annualBudget: "Annual budget ({cur})",
         mpgGoal: "MPG goal",
-        purchasePrice: "Purchase price (USD)",
+        purchasePrice: "Purchase price ({cur})",
         budgetThisMonth: "This month",
         budgetThisYear: "This year",
         mpgGoalCard: "MPG vs Goal",
@@ -946,7 +956,7 @@
         budgetMonthAndYear: "Budget",
         budgetYearOnly: "This year",
         odometerWarn: "Odometer is lower than a previous entry — are you sure?",
-        pricePerGallon: "$ / gallon",
+        pricePerGallon: "{cur} / gallon",
         removedOn: "Removed on",
         undoDelete: "Entry deleted.",
         undoAction: "Undo",
@@ -963,7 +973,7 @@
         snoozed: "Snoozed +500 mi / +30 days",
         duplicateWarn: "A similar entry already exists on that date. Add anyway?",
         monthlyTrend: "Monthly spend (last 12 months)",
-        manualValue: "Manual value override (USD)",
+        manualValue: "Manual value override ({cur})",
         manualValueHint: "Using manual value",
         offline: "Offline",
         installedStatus: "Installed as an app ✓",
@@ -1084,12 +1094,12 @@
         fuelPerMile: "Fuel $/mi",
         phOdometerMi: "Odometer (mi)",
         phOtherType: "Specify if Other",
-        phCostUsd: "Cost (USD)",
+        phCostUsd: "Cost ({cur})",
         phNotes: "Notes",
         phIntervalMiles: "Interval (miles)",
         phIntervalMonths: "Interval (months)",
         phGallons: "Gallons",
-        phTotalCostUsd: "Total Cost (USD)",
+        phTotalCostUsd: "Total Cost ({cur})",
         phStation: "Station",
         phOctane: "Octane",
         phPartName: "Part Name",
@@ -1111,6 +1121,10 @@
         savedInfoParts: "parts",
         confirmDeleteSaved: "Delete all saved data? This cannot be undone.",
         exportedBackup: "Backup downloaded.",
+        pickCurrencyTitle: "Pick a currency",
+        pickCurrencyHint: "This affects how prices are shown. You can change it later by starting fresh.",
+        currencyUsd: "US$ Dollars",
+        currencyDop: "RD$ Pesos",
         noUpcomingReminders: "No upcoming service reminders",
         vehicleBought: "Bought",
         vehiclePlate: "Plate",
@@ -1164,7 +1178,7 @@
         fuelLog: "Registro de Combustible",
         fullTank: "Tanque Lleno",
         mpgChart: "MPG a lo Largo del Tiempo",
-        priceChart: "$/Galón a lo Largo del Tiempo",
+        priceChart: "{cur}/Galón a lo Largo del Tiempo",
         modsLog: "Modificaciones",
         suspension: "Suspensión",
         tiresWheels: "Neumáticos/Ruedas",
@@ -1206,10 +1220,10 @@
         templateCoolant: "Refrigerante (50k mi / 36 mes)",
         templateBattery: "Revisión de batería (50k mi / 48 mes)",
         printReport: "Imprimir reporte de servicio",
-        monthlyBudget: "Presupuesto mensual (USD)",
-        annualBudget: "Presupuesto anual (USD)",
+        monthlyBudget: "Presupuesto mensual ({cur})",
+        annualBudget: "Presupuesto anual ({cur})",
         mpgGoal: "Meta de MPG",
-        purchasePrice: "Precio de compra (USD)",
+        purchasePrice: "Precio de compra ({cur})",
         budgetThisMonth: "Este mes",
         budgetThisYear: "Este año",
         mpgGoalCard: "MPG vs Meta",
@@ -1266,7 +1280,7 @@
         budgetMonthAndYear: "Presupuesto",
         budgetYearOnly: "Este año",
         odometerWarn: "El odómetro es menor que una entrada previa — ¿seguro?",
-        pricePerGallon: "$ / galón",
+        pricePerGallon: "{cur} / galón",
         removedOn: "Retirado el",
         undoDelete: "Entrada eliminada.",
         undoAction: "Deshacer",
@@ -1283,7 +1297,7 @@
         snoozed: "Pospuesto +500 mi / +30 días",
         duplicateWarn: "Ya existe una entrada similar en esa fecha. ¿Agregar de todos modos?",
         monthlyTrend: "Gasto mensual (últimos 12 meses)",
-        manualValue: "Valor manual (USD)",
+        manualValue: "Valor manual ({cur})",
         manualValueHint: "Usando valor manual",
         offline: "Sin conexión",
         installedStatus: "Instalado como app ✓",
@@ -1406,12 +1420,12 @@
         addPart: "Agregar pieza",
         phOdometerMi: "Odómetro (mi)",
         phOtherType: "Especificar si es Otro",
-        phCostUsd: "Costo (USD)",
+        phCostUsd: "Costo ({cur})",
         phNotes: "Notas",
         phIntervalMiles: "Intervalo (millas)",
         phIntervalMonths: "Intervalo (meses)",
         phGallons: "Galones",
-        phTotalCostUsd: "Costo total (USD)",
+        phTotalCostUsd: "Costo total ({cur})",
         phStation: "Estación",
         phOctane: "Octanaje",
         phPartName: "Nombre de pieza",
@@ -1433,6 +1447,10 @@
         savedInfoParts: "piezas",
         confirmDeleteSaved: "¿Eliminar todos los datos guardados? No se puede deshacer.",
         exportedBackup: "Respaldo descargado.",
+        pickCurrencyTitle: "Elige una moneda",
+        pickCurrencyHint: "Afecta cómo se muestran los precios. Puedes cambiarla después con Empezar de cero.",
+        currencyUsd: "US$ Dólares",
+        currencyDop: "RD$ Pesos",
         noUpcomingReminders: "Sin recordatorios próximos",
         vehicleBought: "Comprado",
         vehiclePlate: "Placa",
@@ -1445,6 +1463,10 @@
 
     let lang = localStorage.getItem('lang') || 'en';
     let theme = localStorage.getItem('theme') || 'dark';
+    let currency = localStorage.getItem('currency') || 'USD';
+    const CURRENCY_SYMBOLS = { USD: '$', DOP: 'RD$' };
+    function currencySym() { return CURRENCY_SYMBOLS[currency] || '$'; }
+    function applyCurrencyTokens(str) { return typeof str === 'string' ? str.replace(/\{cur\}/g, currencySym()) : str; }
     let activeVehicleId = localStorage.getItem('activeVehicleId');
     let lastTab = localStorage.getItem('lastTab') || 'dashboard';
 
@@ -1543,11 +1565,11 @@
       localStorage.setItem('lang', lang);
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.dataset.i18n;
-        el.textContent = I18N[lang][key] || key;
+        el.textContent = applyCurrencyTokens(I18N[lang][key] || key);
       });
       document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         const key = el.dataset.i18nPlaceholder;
-        el.placeholder = I18N[lang][key] || key;
+        el.placeholder = applyCurrencyTokens(I18N[lang][key] || key);
       });
       // Flag icon: show the CURRENT language's flag (same convention as the text label)
       const flag = lang === 'en' ? FLAG_US : FLAG_DO;
@@ -1660,7 +1682,7 @@
     let priceChartInstance = null;
     let monthlyChartInstance = null;
 
-    function t(key) { return I18N[lang][key] || key; }
+    function t(key) { return applyCurrencyTokens(I18N[lang][key] || key); }
     function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
     function rowActions(id) {
       return `<span class="row-actions">
@@ -1831,11 +1853,11 @@
         const parts = [];
         if (vehicle.monthlyBudget) {
           const pct = (monthSpend / vehicle.monthlyBudget) * 100;
-          parts.push(`<div class="stat-big">$${monthSpend.toFixed(0)} / $${vehicle.monthlyBudget}</div>${progressBar(pct)}<div class="stat-sub">${pct.toFixed(0)}% ${t('ofBudget')} · ${t('budgetThisMonth')}</div>`);
+          parts.push(`<div class="stat-big">${currencySym()}${monthSpend.toFixed(0)} / ${currencySym()}${vehicle.monthlyBudget}</div>${progressBar(pct)}<div class="stat-sub">${pct.toFixed(0)}% ${t('ofBudget')} · ${t('budgetThisMonth')}</div>`);
         }
         if (vehicle.annualBudget) {
           const pct = (yearSpend / vehicle.annualBudget) * 100;
-          parts.push(`<div class="stat-big">$${yearSpend.toFixed(0)} / $${vehicle.annualBudget}</div>${progressBar(pct)}<div class="stat-sub">${pct.toFixed(0)}% ${t('ofBudget')} · ${t('budgetThisYear')}</div>`);
+          parts.push(`<div class="stat-big">${currencySym()}${yearSpend.toFixed(0)} / ${currencySym()}${vehicle.annualBudget}</div>${progressBar(pct)}<div class="stat-sub">${pct.toFixed(0)}% ${t('ofBudget')} · ${t('budgetThisYear')}</div>`);
         }
         budgetCard.innerHTML = parts.join('<hr style="opacity:0.2;margin:0.75rem 0">');
       } else {
@@ -1876,16 +1898,16 @@
         const { value, manual } = valueInfo;
         if (manual) {
           valueCard.innerHTML = `
-            <div class="stat-big">$${Math.round(value).toLocaleString()}</div>
+            <div class="stat-big">${currencySym()}${Math.round(value).toLocaleString()}</div>
             <div class="stat-sub">${t('manualValueHint')}</div>
           `;
         } else {
           const loss = vehicle.purchasePrice - value;
           const pct = vehicle.purchasePrice > 0 ? (loss / vehicle.purchasePrice) * 100 : 0;
           valueCard.innerHTML = `
-            <div class="stat-big">$${Math.round(value).toLocaleString()}</div>
-            <div class="stat-delta negative">-$${Math.round(loss).toLocaleString()} ${t('depreciation')}</div>
-            <div class="stat-sub">${pct.toFixed(0)}% ${t('depreciationFrom')} $${vehicle.purchasePrice.toLocaleString()}</div>
+            <div class="stat-big">${currencySym()}${Math.round(value).toLocaleString()}</div>
+            <div class="stat-delta negative">-${currencySym()}${Math.round(loss).toLocaleString()} ${t('depreciation')}</div>
+            <div class="stat-sub">${pct.toFixed(0)}% ${t('depreciationFrom')} ${currencySym()}${vehicle.purchasePrice.toLocaleString()}</div>
           `;
         }
       } else {
@@ -1895,17 +1917,17 @@
       // Recent maintenance
       const recentMaint = [...allMaintenance].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
       document.getElementById('recentMaintenance').innerHTML = recentMaint.length
-        ? recentMaint.map(m => `<li>${escHtml(m.date)}: ${escHtml(m.type)} - $${(m.cost||0).toFixed(2)}</li>`).join('')
+        ? recentMaint.map(m => `<li>${escHtml(m.date)}: ${escHtml(m.type)} - ${currencySym()}${(m.cost||0).toFixed(2)}</li>`).join('')
         : `<li class="empty-state">${t('noRecentMaintenance')}</li>`;
       // Recent fuel
       const recentFuel = [...allFuel].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
       document.getElementById('recentFuel').innerHTML = recentFuel.length
-        ? recentFuel.map(f => `<li>${escHtml(f.date)}: ${f.gallons} gal - $${(f.cost || 0).toFixed(2)}</li>`).join('')
+        ? recentFuel.map(f => `<li>${escHtml(f.date)}: ${f.gallons} gal - ${currencySym()}${(f.cost || 0).toFixed(2)}</li>`).join('')
         : `<li class="empty-state">${t('noRecentFuel')}</li>`;
       // Top mods
       const topMods = allMods.filter(m => m.installed).sort((a, b) => b.cost - a.cost).slice(0, 3);
       document.getElementById('topMods').innerHTML = topMods.length
-        ? topMods.map(m => `<li>${escHtml(m.part)}: $${(m.cost||0).toFixed(2)}</li>`).join('')
+        ? topMods.map(m => `<li>${escHtml(m.part)}: ${currencySym()}${(m.cost||0).toFixed(2)}</li>`).join('')
         : `<li class="empty-state">${t('noMods')}</li>`;
 
       // Cost chart + TCO
@@ -1914,8 +1936,8 @@
       const modCost = allMods.reduce((sum, m) => sum + (m.cost || 0), 0);
       const tcoTotal = maintCost + fuelCost + modCost;
       document.getElementById('tcoCard').innerHTML = `
-        <div class="stat-big">$${tcoTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-        <div class="stat-sub">${t('tcoMaintenance')} $${maintCost.toFixed(2)} · ${t('tcoFuel')} $${fuelCost.toFixed(2)} · ${t('tcoMods')} $${modCost.toFixed(2)}</div>
+        <div class="stat-big">${currencySym()}${tcoTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        <div class="stat-sub">${t('tcoMaintenance')} ${currencySym()}${maintCost.toFixed(2)} · ${t('tcoFuel')} ${currencySym()}${fuelCost.toFixed(2)} · ${t('tcoMods')} ${currencySym()}${modCost.toFixed(2)}</div>
       `;
 
       // Cost per mile — split maintenance from fuel
@@ -1926,8 +1948,8 @@
       if (miles > 0) {
         const cpmMaint = maintCost / miles;
         const cpmFuel = fuelCost / miles;
-        cpmMaintCard.innerHTML = `<div class="stat-big">$${cpmMaint.toFixed(3)}</div><div class="stat-sub">${miles.toLocaleString()} ${t('milesDriven')}</div>`;
-        cpmFuelCard.innerHTML = `<div class="stat-big">$${cpmFuel.toFixed(3)}</div><div class="stat-sub">${miles.toLocaleString()} ${t('milesDriven')}</div>`;
+        cpmMaintCard.innerHTML = `<div class="stat-big">${currencySym()}${cpmMaint.toFixed(3)}</div><div class="stat-sub">${miles.toLocaleString()} ${t('milesDriven')}</div>`;
+        cpmFuelCard.innerHTML = `<div class="stat-big">${currencySym()}${cpmFuel.toFixed(3)}</div><div class="stat-sub">${miles.toLocaleString()} ${t('milesDriven')}</div>`;
       } else {
         cpmMaintCard.innerHTML = `<p class="stat-sub">${t('noMileageYet')}</p>`;
         cpmFuelCard.innerHTML = `<p class="stat-sub">${t('noMileageYet')}</p>`;
@@ -2326,7 +2348,7 @@
       if (priceChartInstance) priceChartInstance.destroy();
       priceChartInstance = new Chart(document.getElementById('priceChart'), {
         type: 'line',
-        data: { datasets: [{ label: '$/gal', data: priceData, borderColor: '#f59e0b' }] },
+        data: { datasets: [{ label: `${currencySym()}/gal`, data: priceData, borderColor: '#f59e0b' }] },
         options: { scales: { x: { type: 'time' } } }
       });
       const mpgs = fuel.filter(f => f.mpg).map(f => f.mpg);
@@ -2339,7 +2361,7 @@
         <p>Lifetime Avg MPG: ${avgMpg.toFixed(1)}</p>
         <p>Last 5 Avg MPG: ${avgLast5.toFixed(1)}</p>
         <p>Total Gallons: ${totalGal.toFixed(1)}</p>
-        <p>Total Cost: $${totalCost.toFixed(2)}</p>
+        <p>Total Cost: ${currencySym()}${totalCost.toFixed(2)}</p>
       `;
       renderFuelList(fuel);
     }
@@ -2357,7 +2379,7 @@
       }
       list.innerHTML = filtered.slice().reverse().map(f => `
         <li>
-          <span class="entry-main">${escHtml(f.date)}: ${f.gallons} gal @ $${(f.cost/f.gallons).toFixed(2)}/gal · ${f.mpg ? `${f.mpg.toFixed(1)} MPG` : '— MPG'}${f.station ? ` · ${escHtml(f.station)}` : ''}${f.fullTank ? '' : ' · partial'}</span>
+          <span class="entry-main">${escHtml(f.date)}: ${f.gallons} gal @ ${currencySym()}${(f.cost/f.gallons).toFixed(2)}/gal · ${f.mpg ? `${f.mpg.toFixed(1)} MPG` : '— MPG'}${f.station ? ` · ${escHtml(f.station)}` : ''}${f.fullTank ? '' : ' · partial'}</span>
           ${rowActions(f.id)}
         </li>
       `).join('');
@@ -2385,7 +2407,7 @@
       }
       list.innerHTML = filtered.map(m => `
         <li>
-          <span class="entry-main">${m.photo ? `<img src="${escHtml(m.photo)}" class="photo-thumb" alt="">` : ''}${escHtml(m.date)} · ${escHtml(m.type)} · ${escHtml(m.odometer)} mi · $${(m.cost||0).toFixed(2)} · ${m.shop ? 'Shop' : 'DIY'}${m.notes ? ` · ${escHtml(m.notes)}` : ''}</span>
+          <span class="entry-main">${m.photo ? `<img src="${escHtml(m.photo)}" class="photo-thumb" alt="">` : ''}${escHtml(m.date)} · ${escHtml(m.type)} · ${escHtml(m.odometer)} mi · ${currencySym()}${(m.cost||0).toFixed(2)} · ${m.shop ? 'Shop' : 'DIY'}${m.notes ? ` · ${escHtml(m.notes)}` : ''}</span>
           ${rowActions(m.id)}
         </li>
       `).join('');
@@ -2662,20 +2684,20 @@
 <button onclick="window.print()">${t('reportPrint')}</button>
 <h2>${t('reportVehicle')}</h2>
 <p><strong>${esc(vehicle.nickname)}</strong> — ${esc(vehicle.year)} ${esc(vehicle.make)} ${esc(vehicle.model)} ${esc(vehicle.trim || '')}</p>
-<p class="meta">VIN: ${esc(vehicle.vin || '—')} · ${t('reportOdometer')}: ${esc(vehicle.odometer)} mi${vehicle.purchaseDate ? ' · Purchased: ' + esc(vehicle.purchaseDate) : ''}${vehicle.purchasePrice ? ' · Purchase price: $' + vehicle.purchasePrice.toLocaleString() : ''}</p>
+<p class="meta">VIN: ${esc(vehicle.vin || '—')} · ${t('reportOdometer')}: ${esc(vehicle.odometer)} mi${vehicle.purchaseDate ? ' · Purchased: ' + esc(vehicle.purchaseDate) : ''}${vehicle.purchasePrice ? ' · Purchase price: ' + currencySym() + vehicle.purchasePrice.toLocaleString() : ''}</p>
 <h2>${t('reportTotals')}</h2>
 <div class="totals">
-  <div class="total-box"><span class="meta">${t('reportMaintenance')}</span><strong>$${maintTotal.toFixed(2)}</strong><span class="meta">${maint.length} entries</span></div>
-  <div class="total-box"><span class="meta">${t('reportFuel')}</span><strong>$${fuelTotal.toFixed(2)}</strong><span class="meta">${fuelGallons.toFixed(1)} gal</span></div>
-  <div class="total-box"><span class="meta">${t('reportMods')}</span><strong>$${modTotal.toFixed(2)}</strong><span class="meta">${mods.length} items</span></div>
+  <div class="total-box"><span class="meta">${t('reportMaintenance')}</span><strong>${currencySym()}${maintTotal.toFixed(2)}</strong><span class="meta">${maint.length} entries</span></div>
+  <div class="total-box"><span class="meta">${t('reportFuel')}</span><strong>${currencySym()}${fuelTotal.toFixed(2)}</strong><span class="meta">${fuelGallons.toFixed(1)} gal</span></div>
+  <div class="total-box"><span class="meta">${t('reportMods')}</span><strong>${currencySym()}${modTotal.toFixed(2)}</strong><span class="meta">${mods.length} items</span></div>
 </div>
 <h2>${t('reportMaintenance')}</h2>
 <table><thead><tr><th>Date</th><th>${t('reportOdometer')}</th><th>Type</th><th>Shop/DIY</th><th>Cost</th><th>Notes</th></tr></thead><tbody>
-${maint.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.odometer)}</td><td>${esc(m.type)}</td><td>${m.shop ? 'Shop' : 'DIY'}</td><td>$${(m.cost||0).toFixed(2)}</td><td>${esc(m.notes || '')}</td></tr>`).join('')}
+${maint.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.odometer)}</td><td>${esc(m.type)}</td><td>${m.shop ? 'Shop' : 'DIY'}</td><td>${currencySym()}${(m.cost||0).toFixed(2)}</td><td>${esc(m.notes || '')}</td></tr>`).join('')}
 </tbody></table>
 <h2>${t('reportMods')}</h2>
 <table><thead><tr><th>Date</th><th>Category</th><th>Part</th><th>Brand</th><th>Cost</th><th>Installed</th></tr></thead><tbody>
-${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc(m.part)}</td><td>${esc(m.brand || '')}</td><td>$${(m.cost||0).toFixed(2)}</td><td>${m.installed ? 'Yes' : 'No'}</td></tr>`).join('')}
+${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc(m.part)}</td><td>${esc(m.brand || '')}</td><td>${currencySym()}${(m.cost||0).toFixed(2)}</td><td>${m.installed ? 'Yes' : 'No'}</td></tr>`).join('')}
 </tbody></table>
 </body></html>`;
       const win = window.open('', '_blank');
@@ -2709,11 +2731,11 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
           const removed = !m.installed ? (m.removedDate ? ` (${t('removedOn')} ${escHtml(m.removedDate)})` : ' (Removed)') : '';
           return `
           <li>
-            <span class="entry-main">${m.photo ? `<img src="${escHtml(m.photo)}" class="photo-thumb" alt="">` : ''}${escHtml(m.part)}${m.brand ? ` (${escHtml(m.brand)})` : ''} · $${(m.cost||0).toFixed(2)} · ${isShop ? 'Shop' : 'DIY'}${removed}</span>
+            <span class="entry-main">${m.photo ? `<img src="${escHtml(m.photo)}" class="photo-thumb" alt="">` : ''}${escHtml(m.part)}${m.brand ? ` (${escHtml(m.brand)})` : ''} · ${currencySym()}${(m.cost||0).toFixed(2)} · ${isShop ? 'Shop' : 'DIY'}${removed}</span>
             ${rowActions(m.id)}
           </li>`;
         }).join('')}</ul>
-        <p>Total: $${ms.reduce((sum,m)=>sum+(m.cost||0),0).toFixed(2)}</p>
+        <p>Total: ${currencySym()}${ms.reduce((sum,m)=>sum+(m.cost||0),0).toFixed(2)}</p>
       `).join('');
     }
 
@@ -3039,7 +3061,30 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
       document.getElementById('loader').style.display = 'none';
     });
 
+    function pickCurrency() {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('currencyModal');
+        const usd = document.getElementById('currencyUsdBtn');
+        const dop = document.getElementById('currencyDopBtn');
+        modal.classList.add('open');
+        const choose = (cur) => {
+          usd.removeEventListener('click', onUsd);
+          dop.removeEventListener('click', onDop);
+          currency = cur;
+          localStorage.setItem('currency', cur);
+          modal.classList.remove('open');
+          setLang(lang);
+          resolve(cur);
+        };
+        const onUsd = () => choose('USD');
+        const onDop = () => choose('DOP');
+        usd.addEventListener('click', onUsd);
+        dop.addEventListener('click', onDop);
+      });
+    }
+
     document.getElementById('startFreshBtn').addEventListener('click', async () => {
+      await pickCurrency();
       showLoaderSpinner(true);
       await db.clear('vehicles');
       await db.clear('maintenance');

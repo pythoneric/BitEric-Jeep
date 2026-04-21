@@ -21,11 +21,16 @@ export async function openLoader(page) {
   await page.waitForSelector('#startFreshBtn');
 }
 
-export async function startFresh(page) {
+export async function startFresh(page, { currency = 'USD' } = {}) {
   await openLoader(page);
   await page.click('#startFreshBtn');
+  // Start Fresh now pops a currency picker modal before clearing data. Tests
+  // default to USD to match the pre-existing baseline; pass { currency: 'DOP' }
+  // to exercise the RD$ path.
+  await page.waitForSelector('#currencyModal.open');
+  await page.click(currency === 'DOP' ? '#currencyDopBtn' : '#currencyUsdBtn');
   await page.waitForSelector('#loader', { state: 'hidden', timeout: 10000 });
-  // Start Fresh now lands on Settings with an empty DB, prompting the user to
+  // Start Fresh lands on Settings with an empty DB, prompting the user to
   // add their first vehicle. Add a minimal one so tests that expect an active
   // vehicle can proceed.
   await page.waitForSelector('#vehicleForm');

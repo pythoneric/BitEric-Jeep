@@ -25,7 +25,7 @@ test.describe('Spanish translation coverage (regression for untranslated Parts t
     await switchToSpanish(page);
     await switchTab(page, 'maintenance');
     await expect(page.locator('#mOdometer')).toHaveAttribute('placeholder', 'Odómetro (mi)');
-    await expect(page.locator('#mCost')).toHaveAttribute('placeholder', 'Costo (USD)');
+    await expect(page.locator('#mCost')).toHaveAttribute('placeholder', 'Costo ($)');
     await expect(page.locator('#mNotes')).toHaveAttribute('placeholder', 'Notas');
     await expect(page.locator('#mIntervalMiles')).toHaveAttribute('placeholder', 'Intervalo (millas)');
     await expect(page.locator('#mIntervalMonths')).toHaveAttribute('placeholder', 'Intervalo (meses)');
@@ -35,7 +35,7 @@ test.describe('Spanish translation coverage (regression for untranslated Parts t
     await switchToSpanish(page);
     await switchTab(page, 'fuel');
     await expect(page.locator('#fGallons')).toHaveAttribute('placeholder', 'Galones');
-    await expect(page.locator('#fCost')).toHaveAttribute('placeholder', 'Costo total (USD)');
+    await expect(page.locator('#fCost')).toHaveAttribute('placeholder', 'Costo total ($)');
     await expect(page.locator('#fStation')).toHaveAttribute('placeholder', 'Estación');
     await expect(page.locator('#fOctane')).toHaveAttribute('placeholder', 'Octanaje');
   });
@@ -45,7 +45,7 @@ test.describe('Spanish translation coverage (regression for untranslated Parts t
     await switchTab(page, 'mods');
     await expect(page.locator('#modPart')).toHaveAttribute('placeholder', 'Nombre de pieza');
     await expect(page.locator('#modBrand')).toHaveAttribute('placeholder', 'Marca');
-    await expect(page.locator('#modCost')).toHaveAttribute('placeholder', 'Costo (USD)');
+    await expect(page.locator('#modCost')).toHaveAttribute('placeholder', 'Costo ($)');
     await expect(page.locator('#modNotes')).toHaveAttribute('placeholder', 'Notas');
   });
 

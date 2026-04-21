@@ -135,6 +135,8 @@ test('clicking a chip switches the active vehicle and updates the dashboard', as
 test('empty-state placeholder appears after Start Fresh with no vehicles added', async ({ page }) => {
   await openLoader(page);
   await page.click('#startFreshBtn');
+  await page.waitForSelector('#currencyModal.open');
+  await page.click('#currencyUsdBtn');
   await page.waitForSelector('#loader', { state: 'hidden', timeout: 10000 });
   await expect(page.locator('#vehicleSwitcher .vehicle-chip-empty')).toBeVisible();
   await expect(page.locator('#vehicleSwitcher .vehicle-chip')).toHaveCount(0);
