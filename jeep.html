@@ -1493,14 +1493,6 @@
     ];
 
     // Seed data
-    async function seedData() {
-      const vehicles = await db.getAll('vehicles');
-      if (vehicles.length === 0) {
-        await db.add('vehicles', { id: crypto.randomUUID(), nickname: 'Wrangler', make: 'Jeep', model: 'Wrangler', year: 2020, trim: 'Rubicon', color: 'Black', vin: '', plate: '', purchaseDate: '', odometer: 0, createdAt: new Date(), updatedAt: new Date() });
-        await db.add('vehicles', { id: crypto.randomUUID(), nickname: 'Gladiator', make: 'Jeep', model: 'Gladiator', year: 2021, trim: 'Overland', color: 'Red', vin: '', plate: '', purchaseDate: '', odometer: 0, createdAt: new Date(), updatedAt: new Date() });
-      }
-    }
-
     // UI functions
     const FLAG_US = '<svg viewBox="0 0 19 10" xmlns="http://www.w3.org/2000/svg"><rect width="19" height="10" fill="#fff"/><g fill="#b22234"><rect y="0" width="19" height="0.77"/><rect y="1.54" width="19" height="0.77"/><rect y="3.08" width="19" height="0.77"/><rect y="4.62" width="19" height="0.77"/><rect y="6.15" width="19" height="0.77"/><rect y="7.69" width="19" height="0.77"/><rect y="9.23" width="19" height="0.77"/></g><rect width="7.6" height="5.38" fill="#3c3b6e"/></svg>';
     const FLAG_DO = '<svg viewBox="0 0 15 10" xmlns="http://www.w3.org/2000/svg"><rect width="7.5" height="5" x="0" y="0" fill="#002d62"/><rect width="7.5" height="5" x="7.5" y="5" fill="#002d62"/><rect width="7.5" height="5" x="7.5" y="0" fill="#ce1126"/><rect width="7.5" height="5" x="0" y="5" fill="#ce1126"/><rect width="15" height="1" x="0" y="4.5" fill="#fff"/><rect width="1" height="10" x="7" y="0" fill="#fff"/></svg>';
@@ -1597,10 +1589,14 @@
         select.appendChild(option);
       });
       if (!activeVehicleId || !vehicles.find(v => v.id === activeVehicleId)) {
-        activeVehicleId = vehicles[0]?.id;
+        activeVehicleId = vehicles[0]?.id || null;
       }
-      select.value = activeVehicleId;
-      localStorage.setItem('activeVehicleId', activeVehicleId);
+      if (activeVehicleId) {
+        select.value = activeVehicleId;
+        localStorage.setItem('activeVehicleId', activeVehicleId);
+      } else {
+        localStorage.removeItem('activeVehicleId');
+      }
       loadDashboard();
     }
 
@@ -2996,8 +2992,12 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
       await db.clear('mods');
       await db.clear('parts');
       await db.clear('trails');
+      localStorage.removeItem('activeVehicleId');
+      activeVehicleId = null;
+      lastTab = 'settings';
       await loadApp();
       document.getElementById('loader').style.display = 'none';
+      document.getElementById('vNickname')?.focus();
     });
 
     async function checkSavedData() {
@@ -3515,7 +3515,6 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
 
     // Load app function
     async function loadApp() {
-      await seedData();
       setLang(lang);
       setTheme(theme);
       await loadVehicles();
@@ -3534,7 +3533,6 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
       await db.open(stores);
       setLang(lang);
       setTheme(theme);
-      await seedData();
       await checkSavedData();
     })();
   </script>

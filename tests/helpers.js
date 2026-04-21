@@ -25,9 +25,15 @@ export async function startFresh(page) {
   await openLoader(page);
   await page.click('#startFreshBtn');
   await page.waitForSelector('#loader', { state: 'hidden', timeout: 10000 });
-  // `startFresh` re-seeds a default Wrangler + Gladiator so there is always an
-  // active vehicle to interact with. `<option>` elements inside a collapsed
-  // select are never "visible" — wait for them to be attached instead.
+  // Start Fresh now lands on Settings with an empty DB, prompting the user to
+  // add their first vehicle. Add a minimal one so tests that expect an active
+  // vehicle can proceed.
+  await page.waitForSelector('#vehicleForm');
+  await page.fill('#vNickname', 'Test Rig');
+  await page.fill('#vMake', 'Jeep');
+  await page.fill('#vModel', 'Wrangler');
+  await page.fill('#vYear', '2020');
+  await page.click('#vehicleForm button[type="submit"]');
   await page.waitForFunction(() => document.querySelectorAll('#vehicleSelect option').length > 0);
 }
 
