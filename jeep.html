@@ -789,7 +789,6 @@
 
       <div class="loader-secondary">
         <button id="clearCacheLoaderBtn" class="btn-sm loader-chip" data-i18n="reloadCache">🔄 Clear cache</button>
-        <button id="resetBtn" class="btn-sm loader-chip" data-i18n="resetData">Reset Data</button>
       </div>
 
       <div id="loaderSpinner" class="loader-spinner hidden"></div>
@@ -875,7 +874,6 @@
         startFreshBtn: "Start Fresh",
         demoBtn: "See demo",
         loaderNote: "Demo content is sample-only and safe to explore.",
-        resetData: "Reset Data",
         quickTemplates: "Quick templates",
         selectTemplate: "Select a service…",
         templateOil: "Oil change (5k mi / 6 mo)",
@@ -1189,7 +1187,6 @@
         startFreshBtn: "Empezar Fresco",
         demoBtn: "Ver demo",
         loaderNote: "El contenido de demo es un ejemplo seguro para explorar.",
-        resetData: "Restablecer Datos",
         quickTemplates: "Plantillas rápidas",
         selectTemplate: "Selecciona un servicio…",
         templateOil: "Cambio de aceite (5k mi / 6 mes)",
@@ -2982,19 +2979,6 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
 
     document.getElementById('langToggleLoader').addEventListener('click', () => {
       setLang(lang === 'en' ? 'es' : 'en');
-    });
-
-    document.getElementById('resetBtn').addEventListener('click', async () => {
-      if (confirm(I18N[lang].resetData + '?')) {
-        await db.clear('vehicles');
-        await db.clear('maintenance');
-        await db.clear('fuel');
-        await db.clear('mods');
-        await db.clear('parts');
-      await db.clear('trails');
-        localStorage.clear();
-        location.reload();
-      }
     });
 
     document.getElementById('themeToggle').addEventListener('click', () => {
