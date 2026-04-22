@@ -666,17 +666,17 @@
           <input type="text" id="vNickname" data-i18n-placeholder="nickname" placeholder="Nickname" required>
           <input type="text" id="vMake" data-i18n-placeholder="make" placeholder="Make" required>
           <input type="text" id="vModel" data-i18n-placeholder="model" placeholder="Model" required>
-          <input type="number" id="vYear" data-i18n-placeholder="year" placeholder="Year" required>
+          <input type="number" id="vYear" min="0" data-i18n-placeholder="year" placeholder="Year" required>
           <input type="text" id="vTrim" data-i18n-placeholder="trim" placeholder="Trim">
           <input type="text" id="vColor" data-i18n-placeholder="color" placeholder="Color">
-          <input type="text" id="vVin" data-i18n-placeholder="vin" placeholder="VIN">
+          <input type="text" id="vVin" maxlength="17" data-i18n-placeholder="vin" placeholder="VIN">
           <input type="text" id="vPlate" data-i18n-placeholder="plate" placeholder="License Plate">
           <input type="date" id="vPurchaseDate" data-i18n-placeholder="purchaseDate" placeholder="Purchase Date">
-          <input type="number" id="vOdometer" data-i18n-placeholder="odometer" placeholder="Current Odometer (mi)">
-          <input type="number" step="0.01" id="vPurchasePrice" data-i18n-placeholder="purchasePrice" placeholder="Purchase price (USD)">
-          <input type="number" step="0.1" id="vMpgGoal" data-i18n-placeholder="mpgGoal" placeholder="MPG goal">
-          <input type="number" step="0.01" id="vMonthlyBudget" data-i18n-placeholder="monthlyBudget" placeholder="Monthly budget (USD)">
-          <input type="number" step="0.01" id="vAnnualBudget" data-i18n-placeholder="annualBudget" placeholder="Annual budget (USD)">
+          <input type="number" id="vOdometer" min="0" data-i18n-placeholder="odometer" placeholder="Current Odometer (mi)">
+          <input type="number" step="0.01" id="vPurchasePrice" min="0" data-i18n-placeholder="purchasePrice" placeholder="Purchase price (USD)">
+          <input type="number" step="0.1" id="vMpgGoal" min="0" data-i18n-placeholder="mpgGoal" placeholder="MPG goal">
+          <input type="number" step="0.01" id="vMonthlyBudget" min="0" data-i18n-placeholder="monthlyBudget" placeholder="Monthly budget (USD)">
+          <input type="number" step="0.01" id="vAnnualBudget" min="0" data-i18n-placeholder="annualBudget" placeholder="Annual budget (USD)">
           <details class="drivetrain-details">
             <summary data-i18n="drivetrainSpecs">Drivetrain specs (optional)</summary>
             <select id="vEngine">
@@ -697,7 +697,7 @@
               <option value="Manual 5-speed">Manual 5-speed</option>
             </select>
             <input type="text" id="vTransferCase" data-i18n-placeholder="transferCasePlaceholder" placeholder="Transfer case (e.g. Rock-Trac, NV241)">
-            <input type="text" id="vAxleRatio" data-i18n-placeholder="axleRatioPlaceholder" placeholder="Axle ratio (e.g. 4.10)">
+            <input type="text" id="vAxleRatio" list="axleRatioOptions" data-i18n-placeholder="axleRatioPlaceholder" placeholder="Axle ratio (e.g. 4.10)">
             <input type="text" id="vTireSize" data-i18n-placeholder="tireSizePlaceholder" placeholder='Tire size (e.g. 35x12.50R17)'>
             <input type="text" id="vLiftHeight" data-i18n-placeholder="liftHeightPlaceholder" placeholder='Lift (e.g. 2.5")'>
           </details>
@@ -709,18 +709,18 @@
           <input type="text" id="eNickname" data-i18n-placeholder="nickname" placeholder="Nickname">
           <input type="text" id="eMake" data-i18n-placeholder="make" placeholder="Make">
           <input type="text" id="eModel" data-i18n-placeholder="model" placeholder="Model">
-          <input type="number" id="eYear" data-i18n-placeholder="year" placeholder="Year">
+          <input type="number" id="eYear" min="0" data-i18n-placeholder="year" placeholder="Year">
           <input type="text" id="eTrim" data-i18n-placeholder="trim" placeholder="Trim">
           <input type="text" id="eColor" data-i18n-placeholder="color" placeholder="Color">
-          <input type="text" id="eVin" data-i18n-placeholder="vin" placeholder="VIN">
+          <input type="text" id="eVin" maxlength="17" data-i18n-placeholder="vin" placeholder="VIN">
           <input type="text" id="ePlate" data-i18n-placeholder="plate" placeholder="License Plate">
           <input type="date" id="ePurchaseDate" data-i18n-placeholder="purchaseDate" placeholder="Purchase Date">
-          <input type="number" id="eOdometer" data-i18n-placeholder="odometer" placeholder="Current Odometer (mi)">
-          <input type="number" step="0.01" id="ePurchasePrice" data-i18n-placeholder="purchasePrice" placeholder="Purchase price (USD)">
-          <input type="number" step="0.1" id="eMpgGoal" data-i18n-placeholder="mpgGoal" placeholder="MPG goal">
-          <input type="number" step="0.01" id="eMonthlyBudget" data-i18n-placeholder="monthlyBudget" placeholder="Monthly budget (USD)">
-          <input type="number" step="0.01" id="eAnnualBudget" data-i18n-placeholder="annualBudget" placeholder="Annual budget (USD)">
-          <input type="number" step="0.01" id="eManualValue" data-i18n-placeholder="manualValue" placeholder="Manual value override (USD)">
+          <input type="number" id="eOdometer" min="0" data-i18n-placeholder="odometer" placeholder="Current Odometer (mi)">
+          <input type="number" step="0.01" id="ePurchasePrice" min="0" data-i18n-placeholder="purchasePrice" placeholder="Purchase price (USD)">
+          <input type="number" step="0.1" id="eMpgGoal" min="0" data-i18n-placeholder="mpgGoal" placeholder="MPG goal">
+          <input type="number" step="0.01" id="eMonthlyBudget" min="0" data-i18n-placeholder="monthlyBudget" placeholder="Monthly budget (USD)">
+          <input type="number" step="0.01" id="eAnnualBudget" min="0" data-i18n-placeholder="annualBudget" placeholder="Annual budget (USD)">
+          <input type="number" step="0.01" id="eManualValue" min="0" data-i18n-placeholder="manualValue" placeholder="Manual value override (USD)">
           <details class="drivetrain-details">
             <summary data-i18n="drivetrainSpecs">Drivetrain specs (optional)</summary>
             <select id="eEngine">
@@ -741,14 +741,26 @@
               <option value="Manual 5-speed">Manual 5-speed</option>
             </select>
             <input type="text" id="eTransferCase" data-i18n-placeholder="transferCasePlaceholder" placeholder="Transfer case">
-            <input type="text" id="eAxleRatio" data-i18n-placeholder="axleRatioPlaceholder" placeholder="Axle ratio">
+            <input type="text" id="eAxleRatio" list="axleRatioOptions" data-i18n-placeholder="axleRatioPlaceholder" placeholder="Axle ratio">
             <input type="text" id="eTireSize" data-i18n-placeholder="tireSizePlaceholder" placeholder="Tire size">
             <input type="text" id="eLiftHeight" data-i18n-placeholder="liftHeightPlaceholder" placeholder="Lift">
           </details>
           <label class="severe-service-label"><input type="checkbox" id="eSevereService"> <span data-i18n="severeService">Severe service</span></label>
           <button type="submit" class="btn" data-i18n="saveVehicle">Save changes</button>
         </form>
+        <datalist id="axleRatioOptions">
+          <option value="3.21"></option>
+          <option value="3.45"></option>
+          <option value="3.55"></option>
+          <option value="3.73"></option>
+          <option value="4.10"></option>
+          <option value="4.56"></option>
+          <option value="4.88"></option>
+          <option value="5.13"></option>
+          <option value="5.38"></option>
+        </datalist>
         <button id="deleteVehicleBtn" class="btn btn-danger" data-i18n="deleteVehicle">Delete active vehicle</button>
+        <label class="severe-service-label"><input type="checkbox" id="exportIncludePhotos" checked> <span data-i18n="exportIncludePhotos">Include photos in export</span></label>
         <button id="exportBtn" class="btn" data-i18n="exportData">Export Data</button>
         <input type="file" id="importFile" accept=".json">
         <button id="importBtn" class="btn" data-i18n="importData">Import Data</button>
@@ -983,6 +995,15 @@
         editBtn: "Edit",
         confirmDelete: "Delete this entry?",
         confirmDeleteVehicle: "Delete this vehicle and all its maintenance, fuel, mods, and parts?",
+        confirmDeleteVehicleFmt: "Delete {nickname} and all its maintenance, fuel, mods, parts, and trails? This cannot be undone.",
+        importReplaceWarn: "Replace ALL data? This wipes your current vehicles, maintenance, fuel, mods, parts, and trails and replaces them with the file contents.",
+        importNoFile: "Pick a file first.",
+        importVehicleIdMismatch: "Import blocked: one or more entries reference a vehicle that's not in the file.",
+        importSchemaNewer: "This backup was made with a newer version of the app. Some data may not be recognized. Continue?",
+        importSchemaOlder: "This backup was made with an older version. It will be imported as-is. Continue?",
+        yearOutOfRangeFmt: "Year {year} is outside the Wrangler / Gladiator range (1987-{maxYear}). Save anyway?",
+        vinInvalidWarn: "VIN should be 17 characters with no I, O, or Q. Save anyway?",
+        exportIncludePhotos: "Include photos in export",
         maintenanceHistory: "Maintenance History",
         partsInventoryEmpty: "No parts yet. Add one above.",
         maintenanceHistoryEmpty: "No maintenance entries yet.",
@@ -1383,6 +1404,15 @@
         editBtn: "Editar",
         confirmDelete: "¿Eliminar esta entrada?",
         confirmDeleteVehicle: "¿Eliminar este vehículo y todo su mantenimiento, combustible, mods y piezas?",
+        confirmDeleteVehicleFmt: "¿Eliminar {nickname} y todo su mantenimiento, combustible, mods, piezas y rutas? No se puede deshacer.",
+        importReplaceWarn: "¿Reemplazar TODOS los datos? Esto borra tus vehículos, mantenimiento, combustible, mods, piezas y rutas y los sustituye por el archivo.",
+        importNoFile: "Elige un archivo primero.",
+        importVehicleIdMismatch: "Importación bloqueada: hay entradas que referencian un vehículo que no está en el archivo.",
+        importSchemaNewer: "Este respaldo se hizo con una versión más nueva de la app. Algunos datos podrían no reconocerse. ¿Continuar?",
+        importSchemaOlder: "Este respaldo se hizo con una versión anterior. Se importará tal cual. ¿Continuar?",
+        yearOutOfRangeFmt: "El año {year} está fuera del rango Wrangler / Gladiator (1987-{maxYear}). ¿Guardar?",
+        vinInvalidWarn: "El VIN debe tener 17 caracteres sin I, O ni Q. ¿Guardar de todos modos?",
+        exportIncludePhotos: "Incluir fotos en el respaldo",
         maintenanceHistory: "Historial de mantenimiento",
         partsInventoryEmpty: "Sin piezas aún. Agrega una arriba.",
         maintenanceHistoryEmpty: "Sin entradas de mantenimiento.",
@@ -2970,11 +3000,14 @@
         const sizeMatch = /(?<!\d)(35|37|38|40)(?!\d)/.exec(part);
         if (sizeMatch) {
           const veh = (await db.getAll('vehicles')).find(v => v.id === activeVehicleId);
-          const ratio = (veh?.axleRatio || '').trim();
-          if (!ratio) {
+          const rawRatio = (veh?.axleRatio || '').trim();
+          // Users type axleRatio as "3.73", "3.73:1", "3.73 stock", or "3.73 ".
+          // Extract just the decimal so STOCK_JEEP_RATIOS still matches.
+          const ratioDecimal = /\d+\.\d+/.exec(rawRatio)?.[0] || '';
+          if (!rawRatio) {
             if (!confirm(t('modRegearWarnNoRatio').replace('{size}', sizeMatch[1]))) return;
-          } else if (STOCK_JEEP_RATIOS.includes(ratio)) {
-            if (!confirm(t('modRegearWarnFmt').replace('{size}', sizeMatch[1]).replace('{ratio}', ratio))) return;
+          } else if (STOCK_JEEP_RATIOS.includes(ratioDecimal)) {
+            if (!confirm(t('modRegearWarnFmt').replace('{size}', sizeMatch[1]).replace('{ratio}', rawRatio))) return;
           }
         }
       }
@@ -3033,20 +3066,43 @@
     }
 
     // Vehicle
+    // Wrangler YJ started MY1987; Gladiator JT + JL are current. Outside this
+    // range is almost certainly a typo. We soft-warn rather than block — an
+    // ancient CJ-7 or a future model year could be legitimate.
+    const JEEP_YEAR_MIN = 1987;
+    function jeepYearMax() { return new Date().getFullYear() + 1; }
+    async function warnOnYearOutOfRange(year) {
+      if (!Number.isFinite(year)) return true;
+      if (year >= JEEP_YEAR_MIN && year <= jeepYearMax()) return true;
+      return confirm(t('yearOutOfRangeFmt').replace('{year}', year).replace('{maxYear}', jeepYearMax()));
+    }
+    // Jeep VINs are 17 characters, alphanumeric excluding I/O/Q. Empty VIN is fine
+    // (optional field). Non-empty but non-conforming gets a soft warn.
+    async function warnOnInvalidVin(vin) {
+      const v = (vin || '').trim().toUpperCase();
+      if (!v) return true;
+      if (v.length === 17 && /^[A-HJ-NPR-Z0-9]{17}$/.test(v)) return true;
+      return confirm(t('vinInvalidWarn'));
+    }
+
     document.getElementById('vehicleForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const year = +document.getElementById('vYear').value;
+      if (!await warnOnYearOutOfRange(year)) return;
+      if (!await warnOnInvalidVin(document.getElementById('vVin').value)) return;
+      const odoRaw = document.getElementById('vOdometer').value;
       const data = {
         id: crypto.randomUUID(),
         nickname: document.getElementById('vNickname').value,
         make: document.getElementById('vMake').value,
         model: document.getElementById('vModel').value,
-        year: +document.getElementById('vYear').value,
+        year: year,
         trim: document.getElementById('vTrim').value,
         color: document.getElementById('vColor').value,
         vin: document.getElementById('vVin').value,
         plate: document.getElementById('vPlate').value,
         purchaseDate: document.getElementById('vPurchaseDate').value,
-        odometer: +document.getElementById('vOdometer').value || 0,
+        odometer: odoRaw === '' ? null : +odoRaw,
         purchasePrice: +document.getElementById('vPurchasePrice').value || null,
         mpgGoal: +document.getElementById('vMpgGoal').value || null,
         monthlyBudget: +document.getElementById('vMonthlyBudget').value || null,
@@ -3072,6 +3128,9 @@
       const vehicles = await db.getAll('vehicles');
       const vehicle = vehicles.find(v => v.id === activeVehicleId);
       if (!vehicle) return;
+      const year = +document.getElementById('eYear').value || vehicle.year;
+      if (!await warnOnYearOutOfRange(year)) return;
+      if (!await warnOnInvalidVin(document.getElementById('eVin').value)) return;
       vehicle.nickname = document.getElementById('eNickname').value || vehicle.nickname;
       vehicle.make = document.getElementById('eMake').value || vehicle.make;
       vehicle.model = document.getElementById('eModel').value || vehicle.model;
@@ -3102,8 +3161,13 @@
 
     document.getElementById('deleteVehicleBtn').addEventListener('click', async () => {
       if (!activeVehicleId) return;
-      if (!confirm(t('confirmDeleteVehicle'))) return;
-      // cascade: delete this vehicle's maintenance, fuel, mods, parts
+      const vehicle = (await db.getAll('vehicles')).find(v => v.id === activeVehicleId);
+      const nickname = vehicle?.nickname || '';
+      const prompt = nickname
+        ? t('confirmDeleteVehicleFmt').replace('{nickname}', nickname)
+        : t('confirmDeleteVehicle');
+      if (!confirm(prompt)) return;
+      // cascade: delete this vehicle's maintenance, fuel, mods, parts, trails
       for (const store of ['maintenance', 'fuel', 'mods', 'parts', 'trails']) {
         const items = (await db.getAll(store)).filter(x => x.vehicleId === activeVehicleId);
         for (const it of items) await db.delete(store, it.id);
@@ -3570,12 +3634,22 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
     });
 
     // Settings
+    // Bump when the data shape changes meaningfully — import uses this to warn
+    // if a backup was made with a newer or older schema than the current app.
+    const SCHEMA_VERSION = 1;
+
     document.getElementById('exportBtn').addEventListener('click', async () => {
+      const includePhotos = document.getElementById('exportIncludePhotos')?.checked ?? true;
+      const stripPhoto = rows => includePhotos
+        ? rows
+        : rows.map(r => r && r.photo ? { ...r, photo: null } : r);
       const data = {
+        schemaVersion: SCHEMA_VERSION,
+        exportedAt: new Date().toISOString(),
         vehicles: await db.getAll('vehicles'),
-        maintenance: await db.getAll('maintenance'),
+        maintenance: stripPhoto(await db.getAll('maintenance')),
         fuel: await db.getAll('fuel'),
-        mods: await db.getAll('mods'),
+        mods: stripPhoto(await db.getAll('mods')),
         parts: await db.getAll('parts'),
         trails: await db.getAll('trails')
       };
@@ -3603,12 +3677,21 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
           if (!it || typeof it !== 'object' || typeof it.id !== 'string') return `invalid ${key} entry (missing id)`;
         }
       }
+      // Referential integrity — orphan child entries reveal a hand-edited or
+      // merged file and will render blank on every tab. Block rather than
+      // silently import garbage.
+      const vehicleIds = new Set(data.vehicles.map(v => v.id));
+      for (const key of ['maintenance', 'fuel', 'mods', 'parts', 'trails']) {
+        for (const it of data[key] || []) {
+          if (it.vehicleId && !vehicleIds.has(it.vehicleId)) return 'vehicleId mismatch';
+        }
+      }
       return null;
     }
 
     document.getElementById('importBtn').addEventListener('click', async () => {
       const file = document.getElementById('importFile').files[0];
-      if (!file) return;
+      if (!file) { showToast(t('importNoFile')); return; }
       await handleImportFile(file);
     });
 
@@ -3908,8 +3991,17 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
       try { data = JSON.parse(text); }
       catch { showToast(t('importInvalid'), 5000); return; }
       const err = validateImport(data);
+      if (err === 'vehicleId mismatch') { showToast(t('importVehicleIdMismatch'), 6000); return; }
       if (err) { showToast(t('importInvalid') + ' (' + err + ')', 6000); return; }
-      if (!confirm('Replace all data?')) return;
+      // Schema-version nudge — we import the file either way, but warn the user
+      // so they don't blame us later if something looks off.
+      const incomingVersion = Number.isFinite(+data.schemaVersion) ? +data.schemaVersion : 0;
+      if (incomingVersion > SCHEMA_VERSION) {
+        if (!confirm(t('importSchemaNewer'))) return;
+      } else if (incomingVersion < SCHEMA_VERSION) {
+        if (!confirm(t('importSchemaOlder'))) return;
+      }
+      if (!confirm(t('importReplaceWarn'))) return;
       await db.clear('vehicles');
       await db.clear('maintenance');
       await db.clear('fuel');
@@ -3923,6 +4015,13 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
       for (const p of data.parts || []) await db.add('parts', p);
       for (const tr of data.trails || []) await db.add('trails', tr);
       await loadVehicles();
+      // Re-run every tab's loader so the currently-visible tab reflects the
+      // imported data without requiring a tab switch.
+      try { await loadMaintenance(); } catch {}
+      try { await loadFuel(); } catch {}
+      try { await loadMods(); } catch {}
+      try { await loadParts(); } catch {}
+      try { await loadTrails(); } catch {}
       showToast(t('importSuccess'));
     }
 
@@ -4109,7 +4208,7 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
       await db.clear('mods');
       await db.clear('parts');
       await db.clear('trails');
-      const demoVehicle = { id: crypto.randomUUID(), nickname: 'Gladiator Demo', make: 'Jeep', model: 'Gladiator', year: 2023, trim: 'Rubicon', color: 'Gray', vin: 'DEMGLAD123', plate: 'DEMO1', purchaseDate: '2023-03-01', odometer: 15200, purchasePrice: 52000, mpgGoal: 18, monthlyBudget: 250, annualBudget: 2400, engine: '3.0L EcoDiesel', transmission: 'Auto 8-speed', transferCase: 'Rock-Trac', axleRatio: '3.73', tireSize: '33x12.50R17', liftHeight: '2.5"', severeService: true, createdAt: new Date(), updatedAt: new Date() };
+      const demoVehicle = { id: crypto.randomUUID(), nickname: 'Gladiator Demo', make: 'Jeep', model: 'Gladiator', year: 2023, trim: 'Rubicon', color: 'Gray', vin: '1C4HJXFG5NW201234', plate: 'DEMO1', purchaseDate: '2023-03-01', odometer: 15200, purchasePrice: 52000, mpgGoal: 18, monthlyBudget: 250, annualBudget: 2400, engine: '3.0L EcoDiesel', transmission: 'Auto 8-speed', transferCase: 'Rock-Trac', axleRatio: '3.73', tireSize: '33x12.50R17', liftHeight: '2.5"', severeService: true, createdAt: new Date(), updatedAt: new Date() };
       await db.add('vehicles', demoVehicle);
       const demoMaintenance = [
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-06-15', odometer: 8500, type: 'Oil change', shop: true, cost: 95, notes: 'First service at dealer' },

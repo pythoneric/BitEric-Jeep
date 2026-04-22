@@ -17,7 +17,7 @@ test('Vehicle card shows color, plate, VIN last-4 and purchase date', async ({ p
   const meta = (await page.locator('#vehicleCard .vehicle-meta').allTextContents()).join(' ');
   expect(meta).toContain('Gray'); // color
   expect(meta).toContain('DEMO1'); // plate
-  expect(meta).toContain('D123'); // vin last-4 (DEMGLAD123 → D123)
+  expect(meta).toContain('1234'); // vin last-4 (1C4HJXFG5NW201234 → 1234)
   expect(meta).toMatch(/2023-03-01/); // purchase date
 });
 
