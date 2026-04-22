@@ -1830,6 +1830,40 @@
           request.onerror = () => reject(request.error);
         });
       }
+      // Batch variants: one transaction per call instead of one per item.
+      // Used by import / cascade-delete / demo seeding / start-fresh, all of
+      // which previously looped single-op transactions and paid O(N) txn
+      // overhead for no atomicity gain.
+      async _bulkWrite(storeNames, op) {
+        const db = await this.open([]);
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(storeNames, 'readwrite');
+          op(tx);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+          tx.onabort = () => reject(tx.error);
+        });
+      }
+      async addAll(storeName, items) {
+        if (!items || !items.length) return;
+        return this._bulkWrite(storeName, (tx) => {
+          const os = tx.objectStore(storeName);
+          for (const item of items) os.add(item);
+        });
+      }
+      async deleteAll(storeName, keys) {
+        if (!keys || !keys.length) return;
+        return this._bulkWrite(storeName, (tx) => {
+          const os = tx.objectStore(storeName);
+          for (const key of keys) os.delete(key);
+        });
+      }
+      async clearAll(storeNames) {
+        if (!storeNames || !storeNames.length) return;
+        return this._bulkWrite(storeNames, (tx) => {
+          for (const name of storeNames) tx.objectStore(name).clear();
+        });
+      }
     }
 
     const db = new DB('biteric-jeep');
@@ -1841,6 +1875,7 @@
       { name: 'parts', keyPath: 'id', indexes: [{ name: 'vehicleId', keyPath: 'vehicleId' }] },
       { name: 'trails', keyPath: 'id', indexes: [{ name: 'vehicleId', keyPath: 'vehicleId' }] }
     ];
+    const ALL_STORES = stores.map(s => s.name);
 
     // Seed data
     // UI functions
@@ -3541,10 +3576,11 @@
         ? t('confirmDeleteVehicleFmt').replace('{nickname}', nickname)
         : t('confirmDeleteVehicle');
       if (!confirm(prompt)) return;
-      // cascade: delete this vehicle's maintenance, fuel, mods, parts, trails
+      // cascade: delete this vehicle's maintenance, fuel, mods, parts, trails —
+      // one transaction per store instead of one per row.
       for (const store of ['maintenance', 'fuel', 'mods', 'parts', 'trails']) {
         const items = (await db.getAll(store)).filter(x => x.vehicleId === activeVehicleId);
-        for (const it of items) await db.delete(store, it.id);
+        await db.deleteAll(store, items.map(x => x.id));
       }
       await db.delete('vehicles', activeVehicleId);
       activeVehicleId = null;
@@ -4215,12 +4251,7 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
     document.getElementById('startFreshBtn').addEventListener('click', async () => {
       await pickCurrency();
       showLoaderSpinner(true);
-      await db.clear('vehicles');
-      await db.clear('maintenance');
-      await db.clear('fuel');
-      await db.clear('mods');
-      await db.clear('parts');
-      await db.clear('trails');
+      await db.clearAll(ALL_STORES);
       localStorage.removeItem('activeVehicleId');
       activeVehicleId = null;
       lastTab = 'settings';
@@ -4282,12 +4313,7 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
 
     document.getElementById('deleteLoaderBtn').addEventListener('click', async () => {
       if (!confirm(t('confirmDeleteSaved'))) return;
-      await db.clear('vehicles');
-      await db.clear('maintenance');
-      await db.clear('fuel');
-      await db.clear('mods');
-      await db.clear('parts');
-      await db.clear('trails');
+      await db.clearAll(ALL_STORES);
       localStorage.removeItem('activeVehicleId');
       await checkSavedData();
     });
@@ -4435,18 +4461,13 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
         if (!confirm(t('importSchemaOlder'))) return;
       }
       if (!confirm(t('importReplaceWarn'))) return;
-      await db.clear('vehicles');
-      await db.clear('maintenance');
-      await db.clear('fuel');
-      await db.clear('mods');
-      await db.clear('parts');
-      await db.clear('trails');
-      for (const v of data.vehicles) await db.add('vehicles', v);
-      for (const m of data.maintenance || []) await db.add('maintenance', m);
-      for (const f of data.fuel || []) await db.add('fuel', f);
-      for (const mod of data.mods || []) await db.add('mods', mod);
-      for (const p of data.parts || []) await db.add('parts', p);
-      for (const tr of data.trails || []) await db.add('trails', tr);
+      await db.clearAll(ALL_STORES);
+      await db.addAll('vehicles', data.vehicles);
+      await db.addAll('maintenance', data.maintenance || []);
+      await db.addAll('fuel', data.fuel || []);
+      await db.addAll('mods', data.mods || []);
+      await db.addAll('parts', data.parts || []);
+      await db.addAll('trails', data.trails || []);
       // Restore user-preference settings if the backup carried them. Matches
       // the export side symmetrically so a round-trip is truly lossless.
       let restoredLang = null;
@@ -4648,14 +4669,9 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
     }
 
     async function seedDemoTruck() {
-      await db.clear('vehicles');
-      await db.clear('maintenance');
-      await db.clear('fuel');
-      await db.clear('mods');
-      await db.clear('parts');
-      await db.clear('trails');
+      await db.clearAll(ALL_STORES);
       const demoVehicle = { id: crypto.randomUUID(), nickname: 'Gladiator Demo', make: 'Jeep', model: 'Gladiator', year: 2023, trim: 'Rubicon', color: 'Gray', vin: '1C4HJXFG5NW201234', plate: 'DEMO1', purchaseDate: '2023-03-01', odometer: 15200, purchasePrice: 52000, mpgGoal: 18, monthlyBudget: 250, annualBudget: 2400, engine: '3.0L EcoDiesel', transmission: 'Auto 8-speed', transferCase: 'Rock-Trac', axleRatio: '3.73', tireSize: '33x12.50R17', liftHeight: '2.5"', severeService: true, createdAt: new Date(), updatedAt: new Date() };
-      await db.add('vehicles', demoVehicle);
+      await db.addAll('vehicles', [demoVehicle]);
       const demoMaintenance = [
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-06-15', odometer: 8500, type: 'Oil change', shop: true, cost: 95, notes: 'First service at dealer' },
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-08-15', odometer: 9200, type: 'Tire rotation', shop: false, cost: 0, notes: 'DIY tire rotation' },
@@ -4668,7 +4684,7 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-07-18', odometer: 15800, type: 'Tire replacement', shop: true, cost: 450, notes: 'All-terrain tires for better traction' },
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-08-12', odometer: 16200, type: 'Inspection', shop: true, cost: 120, notes: 'Annual safety inspection' }
       ];
-      for (const entry of demoMaintenance) await db.add('maintenance', entry);
+      await db.addAll('maintenance', demoMaintenance);
       const demoFuel = [
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-07-01', odometer: 12200, gallons: 11.8, cost: 42, station: 'Shell', fullTank: true, octane: 87 },
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-07-15', odometer: 12450, gallons: 12.2, cost: 44, station: 'BP', fullTank: true, octane: 87 },
@@ -4689,7 +4705,7 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-06-25', odometer: 15920, gallons: 12.1, cost: 45, station: 'Shell', fullTank: true, octane: 87 },
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-07-20', odometer: 16150, gallons: 11.8, cost: 43, station: 'BP', fullTank: true, octane: 87 }
       ];
-      for (const entry of demoFuel) await db.add('fuel', entry);
+      await db.addAll('fuel', demoFuel);
       const demoMods = [
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-04-01', odometer: 7800,  category: 'Suspension', part: 'Lift Kit', brand: 'Rubicon Express', cost: 1900, shop: true, notes: '2.5" lift for better ground clearance', installed: true },
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-04-15', odometer: 8100,  category: 'Bumper', part: 'Front Bumper', brand: 'Mopar', cost: 1200, shop: true, notes: 'Stainless steel front bumper upgrade', installed: true },
@@ -4705,7 +4721,7 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-03-01', odometer: 13700, category: 'Electrical', part: 'Aux Battery', brand: 'Optima', cost: 220, shop: false, notes: 'Secondary battery for accessories', installed: true },
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-05-01', odometer: 14500, category: 'Audio', part: 'Subwoofer', brand: 'Kicker', cost: 320, shop: false, notes: '10" subwoofer for better audio', installed: true }
       ];
-      for (const entry of demoMods) await db.add('mods', entry);
+      await db.addAll('mods', demoMods);
       const demoParts = [
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, name: 'Oil filter',          partNumber: 'Mopar MO-899',        category: 'Filters',    quantity: 3, cost: 12.00, reorderAt: 2, purchaseDate: '2024-01-10', location: 'Garage shelf A',  createdAt: new Date() },
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, name: 'Engine oil 5W-30',    partNumber: 'Mobil 1 Delvac',      category: 'Fluids',     quantity: 2, cost: 32.00, reorderAt: 1, purchaseDate: '2024-02-01', location: 'Garage shelf A',  createdAt: new Date() },
@@ -4716,14 +4732,14 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, name: 'Recovery strap 30k',  partNumber: 'ARB ARB705LB',        category: 'Tools',      quantity: 1, cost: 70.00, reorderAt: null, purchaseDate: '2023-09-01', location: 'Truck bed box',   createdAt: new Date() },
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, name: 'Tire plug kit',       partNumber: 'Safety Seal deluxe',  category: 'Tires',      quantity: 1, cost: 28.00, reorderAt: 1, purchaseDate: '2023-09-01', location: 'Truck bed box',   createdAt: new Date() }
       ];
-      for (const entry of demoParts) await db.add('parts', entry);
+      await db.addAll('parts', demoParts);
       const demoTrails = [
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-09-22', odometer: 10700, name: 'Rubicon Trail — Loon Lake to Rubicon Springs', durationHours: 8, airedDownPsi: 15, conditions: ['rock', 'heavy'], waterDepth: null, damage: false, damageNotes: null, notes: 'Full-day granite crawl. Aired down to 15 psi. Used sway bar disconnect.', createdAt: new Date() },
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-11-04', odometer: 11500, name: 'Moab — Hell\'s Revenge', durationHours: 5, airedDownPsi: 18, conditions: ['rock'], waterDepth: null, damage: false, damageNotes: null, notes: 'Slickrock fins. Rear locker engaged twice.', createdAt: new Date() },
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-03-16', odometer: 13500, name: 'Ocala National Forest run', durationHours: 4, airedDownPsi: 20, conditions: ['water', 'mud'], waterDepth: 'deep', damage: false, damageNotes: null, notes: 'Deep water crossing at Juniper. Checked diffs afterward.', createdAt: new Date() },
         { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-06-22', odometer: 15200, name: 'Black Bear Pass — Telluride', durationHours: 3, airedDownPsi: 20, conditions: ['heavy'], waterDepth: null, damage: false, damageNotes: null, notes: 'Shelf road down to Telluride. Brake temps monitored.', createdAt: new Date() }
       ];
-      for (const entry of demoTrails) await db.add('trails', entry);
+      await db.addAll('trails', demoTrails);
     }
 
     // Load app function
