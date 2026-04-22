@@ -498,13 +498,12 @@
         <h2 data-i18n="fuelLog">Fuel Log</h2>
         <form id="fuelForm">
           <input type="date" id="fDate" required>
-          <input type="number" id="fOdometer" placeholder="Odometer (mi)" required>
-          <input type="number" step="0.01" id="fGallons" data-i18n-placeholder="phGallons" placeholder="Gallons" required>
-          <input type="number" step="0.001" id="fPrice" data-i18n-placeholder="pricePerGallon" placeholder="$ / gallon">
-          <input type="number" step="0.01" id="fCost" data-i18n-placeholder="phTotalCostUsd" placeholder="Total Cost (USD)">
+          <input type="number" id="fOdometer" min="0" data-i18n-placeholder="phOdometerMi" placeholder="Odometer (mi)" required>
+          <input type="number" step="0.01" id="fGallons" min="0.01" data-i18n-placeholder="phGallons" placeholder="Gallons" required>
+          <input type="number" step="0.001" id="fPrice" min="0" data-i18n-placeholder="pricePerGallon" placeholder="$ / gallon">
+          <input type="number" step="0.01" id="fCost" min="0" data-i18n-placeholder="phTotalCostUsd" placeholder="Total Cost (USD)">
           <input type="text" id="fStation" data-i18n-placeholder="phStation" placeholder="Station">
           <label><input type="checkbox" id="fFullTank" checked> <span data-i18n="fullTank">Full Tank</span></label>
-          <input type="number" id="fOctane" data-i18n-placeholder="phOctane" placeholder="Octane">
           <select id="fFuelType">
             <option value="" data-i18n="fuelTypePlaceholder">Fuel type…</option>
             <option value="Regular" data-i18n="fuelRegular">Regular (87)</option>
@@ -512,7 +511,6 @@
             <option value="Premium" data-i18n="fuelPremium">Premium (91+)</option>
             <option value="Diesel" data-i18n="fuelDiesel">Diesel</option>
             <option value="E85" data-i18n="fuelE85">E85</option>
-            <option value="Electric" data-i18n="fuelElectric">Electric (kWh)</option>
           </select>
           <select id="fDriving">
             <option value="" data-i18n="drivingPlaceholder">Driving conditions…</option>
@@ -999,8 +997,21 @@
         installAsApp: "Install as app",
         installHelpIos: "On iOS: tap Share → Add to Home Screen",
         installHelpOther: "Use your browser menu → Install / Add to Home Screen",
-        missingCost: "Enter either Total Cost or $/gallon.",
+        missingCost: "Enter either Total Cost or {cur}/gallon.",
         enterOne: "Fill in the form first.",
+        fuelStatsLifetime: "Lifetime Avg MPG",
+        fuelStatsLast5: "Last 5 Avg MPG",
+        fuelStatsTotalGal: "Total Gallons",
+        fuelStatsTotalCost: "Total Cost",
+        fuelRowPartial: "partial",
+        fuelRowMpgMissing: "— MPG",
+        fuelDuplicateWarn: "A fuel entry already exists for that date/odometer. Add anyway?",
+        fuelTankSizeWarn: "That fill is {gallons} gal — bigger than a Wrangler/Gladiator tank. Save anyway?",
+        fuelWarnGasInDiesel: "Your vehicle is a diesel — gasoline fuel type will destroy the engine. Save anyway?",
+        fuelWarnDieselInGas: "Your vehicle is gasoline-powered — diesel will destroy the engine. Save anyway?",
+        fuelWarnLowOctane: "Your engine requires premium (91+). Save anyway?",
+        fuelWarnE85Jeep: "Jeep Wrangler/Gladiator models are NOT flex-fuel — E85 will damage the fuel system. Save anyway?",
+        mpgChartLabel: "MPG",
         costPerMile: "Cost per mile",
         milesDriven: "miles driven",
         noMileageYet: "Need at least one fuel entry for $/mi",
@@ -1341,8 +1352,21 @@
         installAsApp: "Instalar como app",
         installHelpIos: "En iOS: toca Compartir → Agregar a inicio",
         installHelpOther: "Usa el menú de tu navegador → Instalar / Agregar a inicio",
-        missingCost: "Ingresa el costo total o $/galón.",
+        missingCost: "Ingresa el costo total o {cur}/galón.",
         enterOne: "Completa el formulario primero.",
+        fuelStatsLifetime: "Promedio MPG histórico",
+        fuelStatsLast5: "Promedio MPG últimas 5",
+        fuelStatsTotalGal: "Galones totales",
+        fuelStatsTotalCost: "Costo total",
+        fuelRowPartial: "parcial",
+        fuelRowMpgMissing: "— MPG",
+        fuelDuplicateWarn: "Ya hay una entrada de combustible para esa fecha/odómetro. ¿Agregar de todos modos?",
+        fuelTankSizeWarn: "Llenada de {gallons} gal — mayor que un tanque de Wrangler/Gladiator. ¿Guardar?",
+        fuelWarnGasInDiesel: "Tu vehículo es diésel — gasolina destruirá el motor. ¿Guardar de todos modos?",
+        fuelWarnDieselInGas: "Tu vehículo es a gasolina — diésel destruirá el motor. ¿Guardar de todos modos?",
+        fuelWarnLowOctane: "Tu motor requiere premium (91+). ¿Guardar de todos modos?",
+        fuelWarnE85Jeep: "Jeep Wrangler/Gladiator NO es flex-fuel — E85 dañará el sistema. ¿Guardar de todos modos?",
+        mpgChartLabel: "MPG",
         costPerMile: "Costo por milla",
         milesDriven: "millas recorridas",
         noMileageYet: "Se necesita al menos una entrada de combustible para $/mi",
@@ -2392,6 +2416,15 @@
     });
 
     // Fuel
+    // Jeep Wrangler/Gladiator max tank capacity is ~22 gal (JT); add headroom
+    // for the odd jerry-can top-off before warning on a fat-finger entry.
+    const JEEP_MAX_TANK_GAL = 25;
+    function enginePremiumRequired(engineStr) {
+      const s = (engineStr || '').toLowerCase();
+      // 2.0L Turbo, 4xe (still a 2.0T underneath), 6.4L HEMI / 392
+      return /2\.0l|2\.0\s*l|turbo|4xe|phev|6\.4l|6\.4\s*l|hemi|392/.test(s);
+    }
+
     document.getElementById('fuelForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const odometer = +document.getElementById('fOdometer').value;
@@ -2400,18 +2433,48 @@
       const price = +document.getElementById('fPrice').value || 0;
       if (!cost && price && gallons) cost = +(price * gallons).toFixed(2);
       if (!cost) { showToast(t('missingCost')); return; }
+      if (gallons <= 0) { showToast(t('missingCost')); return; }
       if (!await confirmIfOdometerRegresses(odometer, editState.fuel)) return;
+      const date = document.getElementById('fDate').value;
+      const fuelType = document.getElementById('fFuelType').value || null;
+
+      // Duplicate detection — same vehicle/date, odometer within 50 mi (edits bypass)
+      if (!editState.fuel) {
+        const all = await db.getAll('fuel');
+        const dup = all.some(x => x.vehicleId === activeVehicleId && x.date === date && Math.abs((x.odometer || 0) - odometer) < 50);
+        if (dup && !confirm(t('fuelDuplicateWarn'))) return;
+      }
+
+      // Tank-size sanity — catches a typo like "30" (meant 3.0) or "130" (meant 13.0)
+      if (gallons > JEEP_MAX_TANK_GAL) {
+        if (!confirm(t('fuelTankSizeWarn').replace('{gallons}', gallons))) return;
+      }
+
+      // Engine-aware fuel-type mismatch warnings. Silent on null engine / null type.
+      const vehicle = await activeVehicle();
+      const kind = engineKind(vehicle?.engine);
+      if (fuelType) {
+        if (fuelType === 'E85') {
+          if (!confirm(t('fuelWarnE85Jeep'))) return;
+        } else if (kind === 'ecodiesel' && fuelType !== 'Diesel') {
+          if (!confirm(t('fuelWarnGasInDiesel'))) return;
+        } else if (kind && kind !== 'ecodiesel' && fuelType === 'Diesel') {
+          if (!confirm(t('fuelWarnDieselInGas'))) return;
+        } else if (enginePremiumRequired(vehicle?.engine) && fuelType === 'Regular') {
+          if (!confirm(t('fuelWarnLowOctane'))) return;
+        }
+      }
+
       const data = {
         id: editState.fuel || crypto.randomUUID(),
         vehicleId: activeVehicleId,
-        date: document.getElementById('fDate').value,
+        date: date,
         odometer: odometer,
         gallons: gallons,
         cost: cost,
         station: document.getElementById('fStation').value,
         fullTank: document.getElementById('fFullTank').checked,
-        octane: +document.getElementById('fOctane').value || null,
-        fuelType: document.getElementById('fFuelType').value || null,
+        fuelType: fuelType,
         drivingCondition: document.getElementById('fDriving').value || null
       };
       if (editState.fuel) {
@@ -2451,10 +2514,9 @@
         document.getElementById('fOdometer').value = f.odometer || '';
         document.getElementById('fGallons').value = f.gallons || '';
         document.getElementById('fCost').value = f.cost || '';
-        document.getElementById('fPrice').value = f.gallons ? (f.cost / f.gallons).toFixed(3) : '';
+        document.getElementById('fPrice').value = f.gallons > 0 ? (f.cost / f.gallons).toFixed(3) : '';
         document.getElementById('fStation').value = f.station || '';
         document.getElementById('fFullTank').checked = !!f.fullTank;
-        document.getElementById('fOctane').value = f.octane || '';
         document.getElementById('fFuelType').value = f.fuelType || '';
         document.getElementById('fDriving').value = f.drivingCondition || '';
         const form = document.getElementById('fuelForm');
@@ -2464,40 +2526,59 @@
       }
     });
 
+    // Tank-to-tank MPG: miles between two full fills divided by the gallons
+    // actually consumed between them — which is the CURRENT fill's gallons plus
+    // any partial top-offs in between. The old formula used the previous full
+    // fill's gallons and silently dropped partials, which over-reported MPG
+    // whenever fills were irregular.
+    function computeMpg(fuel) {
+      let prevFull = null;
+      let partialGalSincePrevFull = 0;
+      fuel.forEach(f => {
+        f.mpg = null;
+        if (f.fullTank) {
+          if (prevFull) {
+            const consumed = partialGalSincePrevFull + (f.gallons || 0);
+            if (consumed > 0) f.mpg = (f.odometer - prevFull.odometer) / consumed;
+          }
+          prevFull = f;
+          partialGalSincePrevFull = 0;
+        } else if (prevFull) {
+          partialGalSincePrevFull += (f.gallons || 0);
+        }
+      });
+    }
+
     async function loadFuel() {
       const fuel = (await db.getAll('fuel')).filter(f => f.vehicleId === activeVehicleId).sort((a,b) => new Date(a.date) - new Date(b.date));
-      let prevFull = null;
-      fuel.forEach(f => {
-        if (f.fullTank && prevFull) {
-          f.mpg = (f.odometer - prevFull.odometer) / prevFull.gallons;
-        }
-        if (f.fullTank) prevFull = f;
-      });
-      const mpgData = fuel.filter(f => f.mpg).map(f => ({ x: new Date(f.date), y: f.mpg }));
+      computeMpg(fuel);
+      const mpgData = fuel.filter(f => f.mpg != null).map(f => ({ x: new Date(f.date), y: f.mpg }));
       if (mpgChartInstance) mpgChartInstance.destroy();
       mpgChartInstance = new Chart(document.getElementById('mpgChart'), {
         type: 'line',
-        data: { datasets: [{ label: 'MPG', data: mpgData, borderColor: '#d97706' }] },
+        data: { datasets: [{ label: t('mpgChartLabel'), data: mpgData, borderColor: '#d97706' }] },
         options: { scales: { x: { type: 'time' } } }
       });
-      const priceData = fuel.map(f => ({ x: new Date(f.date), y: f.cost / f.gallons }));
+      const priceData = fuel
+        .filter(f => f.gallons > 0)
+        .map(f => ({ x: new Date(f.date), y: f.cost / f.gallons }));
       if (priceChartInstance) priceChartInstance.destroy();
       priceChartInstance = new Chart(document.getElementById('priceChart'), {
         type: 'line',
         data: { datasets: [{ label: `${currencySym()}/gal`, data: priceData, borderColor: '#f59e0b' }] },
         options: { scales: { x: { type: 'time' } } }
       });
-      const mpgs = fuel.filter(f => f.mpg).map(f => f.mpg);
+      const mpgs = fuel.filter(f => f.mpg != null).map(f => f.mpg);
       const avgMpg = mpgs.length ? mpgs.reduce((a,b)=>a+b)/mpgs.length : 0;
       const last5 = mpgs.slice(-5);
       const avgLast5 = last5.length ? last5.reduce((a,b)=>a+b)/last5.length : 0;
-      const totalGal = fuel.reduce((sum,f)=>sum+f.gallons,0);
-      const totalCost = fuel.reduce((sum,f)=>sum+f.cost,0);
+      const totalGal = fuel.reduce((sum,f)=>sum+(f.gallons||0),0);
+      const totalCost = fuel.reduce((sum,f)=>sum+(f.cost||0),0);
       document.getElementById('fuelStats').innerHTML = `
-        <p>Lifetime Avg MPG: ${avgMpg.toFixed(1)}</p>
-        <p>Last 5 Avg MPG: ${avgLast5.toFixed(1)}</p>
-        <p>Total Gallons: ${totalGal.toFixed(1)}</p>
-        <p>Total Cost: ${currencySym()}${totalCost.toFixed(2)}</p>
+        <p>${t('fuelStatsLifetime')}: ${avgMpg.toFixed(1)}</p>
+        <p>${t('fuelStatsLast5')}: ${avgLast5.toFixed(1)}</p>
+        <p>${t('fuelStatsTotalGal')}: ${totalGal.toFixed(1)}</p>
+        <p>${t('fuelStatsTotalCost')}: ${currencySym()}${totalCost.toFixed(2)}</p>
       `;
       renderFuelList(fuel);
     }
@@ -2505,7 +2586,7 @@
     function renderFuelList(fuel) {
       const query = (document.getElementById('fuelSearch')?.value || '').toLowerCase().trim();
       const filtered = query
-        ? fuel.filter(f => [f.date, f.station, f.octane, f.gallons, f.cost].some(v => String(v || '').toLowerCase().includes(query)))
+        ? fuel.filter(f => [f.date, f.station, f.fuelType, f.drivingCondition, f.gallons, f.cost].some(v => String(v || '').toLowerCase().includes(query)))
         : fuel;
       const list = document.getElementById('fuelList');
       list.className = 'entry-list';
@@ -2513,12 +2594,19 @@
         list.innerHTML = `<li class="empty-state">${t(query ? 'noResults' : 'noRecentFuel')}</li>`;
         return;
       }
-      list.innerHTML = filtered.slice().reverse().map(f => `
+      list.innerHTML = filtered.slice().reverse().map(f => {
+        const pricePerGal = f.gallons > 0 ? (f.cost / f.gallons).toFixed(2) : '—';
+        const mpgBit = f.mpg != null ? `${f.mpg.toFixed(1)} MPG` : t('fuelRowMpgMissing');
+        const stationBit = f.station ? ` · ${escHtml(f.station)}` : '';
+        const typeBit = f.fuelType ? ` · ${escHtml(f.fuelType)}` : '';
+        const drivingBit = f.drivingCondition ? ` · ${escHtml(f.drivingCondition)}` : '';
+        const partialBit = f.fullTank ? '' : ` · ${t('fuelRowPartial')}`;
+        return `
         <li>
-          <span class="entry-main">${escHtml(f.date)}: ${f.gallons} gal @ ${currencySym()}${(f.cost/f.gallons).toFixed(2)}/gal · ${f.mpg ? `${f.mpg.toFixed(1)} MPG` : '— MPG'}${f.station ? ` · ${escHtml(f.station)}` : ''}${f.fullTank ? '' : ' · partial'}</span>
+          <span class="entry-main">${escHtml(f.date)}: ${f.gallons} gal @ ${currencySym()}${pricePerGal}/gal · ${mpgBit}${stationBit}${typeBit}${drivingBit}${partialBit}</span>
           ${rowActions(f.id)}
-        </li>
-      `).join('');
+        </li>`;
+      }).join('');
     }
 
     async function loadMaintenance() {
@@ -2557,11 +2645,7 @@
     });
     document.getElementById('fuelSearch').addEventListener('input', async () => {
       const fuel = (await db.getAll('fuel')).filter(f => f.vehicleId === activeVehicleId).sort((a,b) => new Date(a.date) - new Date(b.date));
-      let prevFull = null;
-      fuel.forEach(f => {
-        if (f.fullTank && prevFull) f.mpg = (f.odometer - prevFull.odometer) / prevFull.gallons;
-        if (f.fullTank) prevFull = f;
-      });
+      computeMpg(fuel);
       renderFuelList(fuel);
     });
 

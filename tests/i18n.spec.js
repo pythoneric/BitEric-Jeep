@@ -37,7 +37,7 @@ test.describe('Spanish translation coverage (regression for untranslated Parts t
     await expect(page.locator('#fGallons')).toHaveAttribute('placeholder', 'Galones');
     await expect(page.locator('#fCost')).toHaveAttribute('placeholder', 'Costo total ($)');
     await expect(page.locator('#fStation')).toHaveAttribute('placeholder', 'Estación');
-    await expect(page.locator('#fOctane')).toHaveAttribute('placeholder', 'Octanaje');
+    await expect(page.locator('#fOdometer')).toHaveAttribute('placeholder', 'Odómetro (mi)');
   });
 
   test('Mods form placeholders translate', async ({ page }) => {
