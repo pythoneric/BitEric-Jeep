@@ -232,10 +232,14 @@ test('editing a trail does not duplicate follow-ups', async ({ page }) => {
   await page.fill('#trailOdometer', '14000');
   await page.check('#trailRock');
   await page.click('#trailsForm button[type="submit"]');
+  // Wait for the form-reset that runs on a successful save.
+  await expect(page.locator('#trailName')).toHaveValue('');
 
+  // Use Playwright's auto-retrying locator assertion so we don't race the
+  // async spawn + loadMaintenance that fires after the tab switch.
   await switchTab(page, 'maintenance');
-  const inspectionsBefore = await page.locator('#maintenanceList li').filter({ hasText: 'Inspection' }).count();
-  expect(inspectionsBefore).toBe(1);
+  const inspections = page.locator('#maintenanceList li', { hasText: 'Inspection' });
+  await expect(inspections).toHaveCount(1);
 
   await switchTab(page, 'trails');
   await page.locator('#trailsList .edit-btn').first().click();
@@ -243,8 +247,8 @@ test('editing a trail does not duplicate follow-ups', async ({ page }) => {
   await page.click('#trailsForm button[type="submit"]');
 
   await switchTab(page, 'maintenance');
-  const inspectionsAfter = await page.locator('#maintenanceList li').filter({ hasText: 'Inspection' }).count();
-  expect(inspectionsAfter).toBe(1); // no new spawn on edit
+  // Same auto-retry — if the edit accidentally re-spawned, count would flip to 2.
+  await expect(inspections).toHaveCount(1);
 });
 
 // --- Odometer bump ---
