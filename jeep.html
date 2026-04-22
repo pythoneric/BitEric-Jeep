@@ -542,12 +542,17 @@
         <h2 data-i18n="modsLog">Modifications</h2>
         <form id="modsForm">
           <input type="date" id="modDate" required>
+          <input type="number" id="modOdometer" min="0" required data-i18n-placeholder="modOdometerLabel" placeholder="Odometer at install (mi)">
           <select id="modCategory">
             <option value="Suspension" data-i18n="suspension">Suspension</option>
             <option value="Tires/Wheels" data-i18n="tiresWheels">Tires/Wheels</option>
+            <option value="Fender flares" data-i18n="modCatFenderFlares">Fender flares</option>
+            <option value="Top / doors" data-i18n="modCatTops">Top / doors / panels</option>
+            <option value="Sway bar disconnect" data-i18n="modCatSwayBar">Sway bar disconnect</option>
             <option value="Bumper" data-i18n="bumper">Bumper</option>
             <option value="Lighting" data-i18n="lighting">Lighting</option>
             <option value="Skid plates" data-i18n="skidPlates">Skid plates</option>
+            <option value="Fuel tank skid" data-i18n="modCatFuelTankSkid">Fuel tank skid</option>
             <option value="Sliders" data-i18n="sliders">Sliders / rock rails</option>
             <option value="Armor" data-i18n="armor">Armor</option>
             <option value="Winch" data-i18n="winch">Winch</option>
@@ -563,15 +568,21 @@
           </select>
           <input type="text" id="modPart" data-i18n-placeholder="phPartName" placeholder="Part Name" required>
           <input type="text" id="modBrand" data-i18n-placeholder="phPartBrand" placeholder="Brand">
-          <input type="number" step="0.01" id="modCost" data-i18n-placeholder="phCostUsd" placeholder="Cost (USD)">
+          <input type="number" step="0.01" id="modCost" min="0" data-i18n-placeholder="phCostUsd" placeholder="Cost (USD)">
           <label><input type="checkbox" id="modShop"> <span data-i18n="shop">Shop</span> (<span data-i18n="diy">DIY</span>)</label>
           <textarea id="modNotes" data-i18n-placeholder="phNotes" placeholder="Notes"></textarea>
           <label><input type="checkbox" id="modInstalled" checked> <span data-i18n="stillInstalled">Still Installed</span></label>
           <input type="date" id="modRemovedDate" class="hidden" data-i18n-placeholder="removedOn" placeholder="Removed on">
-          <details class="followup-details">
+          <textarea id="modRemovalReason" class="hidden" data-i18n-placeholder="modRemovalReasonPh" placeholder="e.g. upgraded / broken / sold"></textarea>
+          <details class="followup-details" id="modFollowUpDetails">
             <summary data-i18n="followUp">Schedule follow-up (optional)</summary>
-            <label><input type="checkbox" id="modFollowUpAlignment"> <span data-i18n="followUpAlignment">Alignment check at +500 miles</span></label>
-            <label><input type="checkbox" id="modFollowUpLift"> <span data-i18n="followUpLift">Re-torque lift-kit bolts at +500 miles</span></label>
+            <label class="mod-follow-up" data-cats="Suspension,Tires/Wheels"><input type="checkbox" id="modFollowUpAlignment"> <span data-i18n="followUpAlignment">Alignment check at +500 miles</span></label>
+            <label class="mod-follow-up" data-cats="Suspension"><input type="checkbox" id="modFollowUpLift"> <span data-i18n="followUpLift">Re-torque lift-kit bolts at +500 miles</span></label>
+            <label class="mod-follow-up" data-cats="Suspension,Sway bar disconnect,Gearing / Lockers"><input type="checkbox" id="modFollowUpDeathWobble"> <span data-i18n="modFollowUpDeathWobble">Death-wobble steering inspection at +500 miles</span></label>
+            <label class="mod-follow-up" data-cats="Tires/Wheels"><input type="checkbox" id="modFollowUpWheelRetorque"> <span data-i18n="modFollowUpWheelRetorque">Re-torque lug nuts at +50 miles</span></label>
+            <label class="mod-follow-up" data-cats="Tires/Wheels"><input type="checkbox" id="modFollowUpTpms"> <span data-i18n="modFollowUpTpms">TPMS sensor relearn / test at +50 miles</span></label>
+            <label class="mod-follow-up" data-cats="Gearing / Lockers,Drivetrain"><input type="checkbox" id="modFollowUpGearBreakIn"> <span data-i18n="modFollowUpGearBreakIn">Gear break-in check at +500 miles</span></label>
+            <label class="mod-follow-up" data-cats="Gearing / Lockers,Drivetrain"><input type="checkbox" id="modFollowUpDiffFluid"> <span data-i18n="modFollowUpDiffFluid">Differential fluid swap at +500 miles (new gear break-in)</span></label>
           </details>
           <label data-i18n="modPhoto">Photo (optional)</label>
           <input type="file" id="modPhotoFile" accept="image/*">
@@ -1078,6 +1089,23 @@
         brakeCaliperSlide: "Brake caliper slide lube",
         bodyMountRetorque: "Body mount re-torque",
         followUpAutoNote: "Auto-scheduled after service",
+        modOdometerLabel: "Odometer at install (mi)",
+        modRemovalReason: "Reason for removal (optional)",
+        modRemovalReasonPh: "e.g. upgraded / broken / sold",
+        modRemovedLabel: "Removed",
+        modTotalLabel: "Total",
+        modDuplicateWarn: "A similar mod already exists for that date and part. Add anyway?",
+        modRegearWarnFmt: "{size}\" tires on stock-ish gears ({ratio}) — the Wrangler/Gladiator 8-speed will struggle. Consider regearing to 4.56 or 4.88. Save anyway?",
+        modRegearWarnNoRatio: "{size}\" tires are a big jump — most JL/JT owners regear to 4.56+ to avoid killing acceleration. Set axleRatio in Settings if applicable. Save anyway?",
+        modCatFenderFlares: "Fender flares",
+        modCatTops: "Top / doors / panels",
+        modCatSwayBar: "Sway bar disconnect",
+        modCatFuelTankSkid: "Fuel tank skid",
+        modFollowUpWheelRetorque: "Re-torque lug nuts at +50 miles",
+        modFollowUpDeathWobble: "Death-wobble steering inspection at +500 miles",
+        modFollowUpTpms: "TPMS sensor relearn / test at +50 miles",
+        modFollowUpGearBreakIn: "Gear break-in check at +500 miles",
+        modFollowUpDiffFluid: "Differential fluid swap at +500 miles (new gear break-in)",
         measurements: "Measurements (optional)",
         padFront: "Pad thickness front (mm)",
         padRear: "Pad thickness rear (mm)",
@@ -1433,6 +1461,23 @@
         brakeCaliperSlide: "Lubricar guías de caliper",
         bodyMountRetorque: "Re-torque montajes carrocería",
         followUpAutoNote: "Agendado automáticamente tras servicio",
+        modOdometerLabel: "Odómetro al instalar (mi)",
+        modRemovalReason: "Motivo de la remoción (opcional)",
+        modRemovalReasonPh: "ej. actualizado / roto / vendido",
+        modRemovedLabel: "Removido",
+        modTotalLabel: "Total",
+        modDuplicateWarn: "Ya existe un mod similar para esa fecha y parte. ¿Agregar de todos modos?",
+        modRegearWarnFmt: "Neumáticos {size}\" con relación {ratio} — el 8-speed del Wrangler/Gladiator sufrirá. Considera cambiar a 4.56 o 4.88. ¿Guardar?",
+        modRegearWarnNoRatio: "Neumáticos {size}\" son un salto grande — la mayoría de los JL/JT cambian a 4.56+. Configura axleRatio si aplica. ¿Guardar?",
+        modCatFenderFlares: "Guardafangos (flares)",
+        modCatTops: "Techo / puertas / paneles",
+        modCatSwayBar: "Desconexión barra estabilizadora",
+        modCatFuelTankSkid: "Protector de tanque",
+        modFollowUpWheelRetorque: "Re-torque tuercas a +50 millas",
+        modFollowUpDeathWobble: "Inspección dirección (death wobble) a +500 millas",
+        modFollowUpTpms: "Prueba / relearn TPMS a +50 millas",
+        modFollowUpGearBreakIn: "Revisión break-in de engranajes a +500 millas",
+        modFollowUpDiffFluid: "Cambio fluido diferencial a +500 millas (break-in)",
         measurements: "Mediciones (opcional)",
         padFront: "Espesor pastilla delantera (mm)",
         padRear: "Espesor pastilla trasera (mm)",
@@ -2735,29 +2780,108 @@
       reader.readAsDataURL(file);
     });
 
-    // modInstalled toggle shows/hides Removed-on date
+    // modInstalled toggle shows/hides Removed-on date + Reason-for-removal textarea.
     document.getElementById('modInstalled').addEventListener('change', (e) => {
-      document.getElementById('modRemovedDate').classList.toggle('hidden', e.target.checked);
-      if (!e.target.checked && !document.getElementById('modRemovedDate').value) {
-        document.getElementById('modRemovedDate').value = new Date().toISOString().split('T')[0];
+      const removedDate = document.getElementById('modRemovedDate');
+      const removalReason = document.getElementById('modRemovalReason');
+      const hide = e.target.checked;
+      removedDate.classList.toggle('hidden', hide);
+      removalReason.classList.toggle('hidden', hide);
+      if (!hide && !removedDate.value) {
+        // Local date (same basis as the max attribute) — UTC-derived strings
+        // can land a day ahead of the max cap and trip HTML5 validation.
+        removedDate.value = todayIsoLocal();
       }
     });
+
+    // Category-aware follow-ups: only show options relevant to the selected
+    // category. A Bumper install shouldn't see "lift re-torque"; a tires/wheels
+    // install SHOULD see wheel re-torque + TPMS + alignment.
+    function refreshModFollowUps() {
+      const cat = document.getElementById('modCategory').value;
+      const details = document.getElementById('modFollowUpDetails');
+      let anyVisible = false;
+      details.querySelectorAll('.mod-follow-up').forEach(label => {
+        const cats = (label.dataset.cats || '').split(',');
+        const show = cats.includes(cat);
+        label.classList.toggle('hidden', !show);
+        if (!show) label.querySelector('input[type="checkbox"]').checked = false;
+        if (show) anyVisible = true;
+      });
+      details.classList.toggle('hidden', !anyVisible);
+    }
+    document.getElementById('modCategory').addEventListener('change', refreshModFollowUps);
+
+    // Block future install/removal dates. Today in local time (YYYY-MM-DD).
+    function todayIsoLocal() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+    function applyModMaxDates() {
+      const today = todayIsoLocal();
+      document.getElementById('modDate').max = today;
+      document.getElementById('modRemovedDate').max = today;
+    }
+
+    // Stock or near-stock JL/JT axle ratios (3.21, 3.45, 3.73) — big tires on
+    // these ratios kill acceleration and hammer the 8-speed. Used for the
+    // tires/regear soft warning.
+    const STOCK_JEEP_RATIOS = ['3.21', '3.45', '3.73'];
 
     document.getElementById('modsForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const installed = document.getElementById('modInstalled').checked;
+      const odometer = +document.getElementById('modOdometer').value;
+      const date = document.getElementById('modDate').value;
+      const category = document.getElementById('modCategory').value;
+      const part = document.getElementById('modPart').value;
+
+      // Duplicate detection — same vehicle, same date, same category + part
+      // (case-insensitive, trimmed). Edits bypass.
+      if (!editState.mods) {
+        const all = await db.getAll('mods');
+        const norm = s => (s || '').trim().toLowerCase();
+        const dup = all.some(x => x.vehicleId === activeVehicleId && x.date === date
+          && norm(x.category) === norm(category)
+          && norm(x.part) === norm(part));
+        if (dup && !confirm(t('modDuplicateWarn'))) return;
+      }
+
+      // Tire-size / regear soft warn — fires when someone installs 35/37/38/40"
+      // tires on stock-ish gears. Most JL/JT owners regear to 4.56 or 4.88.
+      if (category === 'Tires/Wheels') {
+        // Tire size "35x12.50R17" has x as a word char, so \b fails after the
+        // number. Use digit-boundaries instead so we match 35/37/38/40 in
+        // "35x12.50R17" and "37" but not inside larger numbers like "1375".
+        const sizeMatch = /(?<!\d)(35|37|38|40)(?!\d)/.exec(part);
+        if (sizeMatch) {
+          const veh = (await db.getAll('vehicles')).find(v => v.id === activeVehicleId);
+          const ratio = (veh?.axleRatio || '').trim();
+          if (!ratio) {
+            if (!confirm(t('modRegearWarnNoRatio').replace('{size}', sizeMatch[1]))) return;
+          } else if (STOCK_JEEP_RATIOS.includes(ratio)) {
+            if (!confirm(t('modRegearWarnFmt').replace('{size}', sizeMatch[1]).replace('{ratio}', ratio))) return;
+          }
+        }
+      }
+
       const data = {
         id: editState.mods || crypto.randomUUID(),
         vehicleId: activeVehicleId,
-        date: document.getElementById('modDate').value,
-        category: document.getElementById('modCategory').value,
-        part: document.getElementById('modPart').value,
+        date: date,
+        odometer: odometer,
+        category: category,
+        part: part,
         brand: document.getElementById('modBrand').value,
         cost: +document.getElementById('modCost').value || 0,
         shop: document.getElementById('modShop').checked,
         notes: document.getElementById('modNotes').value,
         installed: installed,
         removedDate: installed ? null : (document.getElementById('modRemovedDate').value || null),
+        removalReason: installed ? null : (document.getElementById('modRemovalReason').value || null),
         photo: modPhotoDataUrl
       };
       if (editState.mods) {
@@ -2765,16 +2889,19 @@
         exitModsEdit();
       } else {
         await db.add('mods', data);
-        // Spawn follow-ups for new mods (use latest vehicle odometer as anchor)
+        // Spawn follow-ups anchored to the mod install date + odometer (not today's).
         const spawns = [];
-        if (document.getElementById('modFollowUpAlignment').checked) spawns.push({ type: 'Alignment', miles: 500, note: 'Auto-scheduled after mod install' });
-        if (document.getElementById('modFollowUpLift').checked) spawns.push({ type: 'Lift kit re-torque', miles: 500, note: 'Auto-scheduled after mod install' });
-        if (spawns.length) {
-          const veh = (await db.getAll('vehicles')).find(v => v.id === activeVehicleId);
-          const anchorOdo = veh?.odometer || 0;
-          for (const s of spawns) await spawnFollowUp(s, anchorOdo);
-        }
+        const chk = id => document.getElementById(id);
+        if (chk('modFollowUpAlignment').checked) spawns.push({ type: 'Alignment', miles: 500 });
+        if (chk('modFollowUpLift').checked) spawns.push({ type: 'Lift kit re-torque', miles: 500 });
+        if (chk('modFollowUpDeathWobble').checked) spawns.push({ type: 'Steering inspection', miles: 500 });
+        if (chk('modFollowUpWheelRetorque').checked) spawns.push({ type: 'Wheel re-torque', miles: 50 });
+        if (chk('modFollowUpTpms').checked) spawns.push({ type: 'TPMS sensor', miles: 50 });
+        if (chk('modFollowUpGearBreakIn').checked) spawns.push({ type: 'Inspection', miles: 500 });
+        if (chk('modFollowUpDiffFluid').checked) spawns.push({ type: 'Differential fluid rear', miles: 500 });
+        for (const s of spawns) await spawnFollowUp(s, odometer, date);
       }
+      await bumpVehicleOdometer(odometer);
       modPhotoDataUrl = null;
       document.getElementById('modPhotoPreview').classList.add('hidden');
       document.getElementById('modPhotoPreview').removeAttribute('src');
@@ -2782,6 +2909,9 @@
       loadDashboard();
       e.target.reset();
       document.getElementById('modRemovedDate').classList.add('hidden');
+      document.getElementById('modRemovalReason').classList.add('hidden');
+      applyModMaxDates();
+      refreshModFollowUps();
       document.getElementById('modDate').focus();
     });
 
@@ -2930,6 +3060,8 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
     async function loadMods() {
       const all = (await db.getAll('mods')).filter(m => m.vehicleId === activeVehicleId);
       renderMods(all);
+      applyModMaxDates();
+      refreshModFollowUps();
     }
 
     function renderMods(all) {
@@ -2949,14 +3081,20 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
         <h3>${escHtml(cat)}</h3>
         <ul class="entry-list">${ms.map(m => {
           const isShop = (typeof m.shop === 'boolean') ? m.shop : (m.installedBy && /shop/i.test(m.installedBy));
-          const removed = !m.installed ? (m.removedDate ? ` (${t('removedOn')} ${escHtml(m.removedDate)})` : ' (Removed)') : '';
+          const removed = !m.installed
+            ? (m.removedDate
+              ? ` (${t('removedOn')} ${escHtml(m.removedDate)})`
+              : ` (${t('modRemovedLabel')})`)
+            : '';
+          const reasonBit = !m.installed && m.removalReason ? ` — ${escHtml(m.removalReason)}` : '';
+          const odoBit = m.odometer ? ` · ${escHtml(m.odometer)} mi` : '';
           return `
           <li>
-            <span class="entry-main">${m.photo ? `<img src="${escHtml(m.photo)}" class="photo-thumb" alt="">` : ''}${escHtml(m.part)}${m.brand ? ` (${escHtml(m.brand)})` : ''} · ${currencySym()}${(m.cost||0).toFixed(2)} · ${isShop ? 'Shop' : 'DIY'}${removed}</span>
+            <span class="entry-main">${m.photo ? `<img src="${escHtml(m.photo)}" class="photo-thumb" alt="">` : ''}${escHtml(m.part)}${m.brand ? ` (${escHtml(m.brand)})` : ''}${odoBit} · ${currencySym()}${(m.cost||0).toFixed(2)} · ${isShop ? t('shop') : t('diy')}${removed}${reasonBit}</span>
             ${rowActions(m.id)}
           </li>`;
         }).join('')}</ul>
-        <p>Total: ${currencySym()}${ms.reduce((sum,m)=>sum+(m.cost||0),0).toFixed(2)}</p>
+        <p>${t('modTotalLabel')}: ${currencySym()}${ms.reduce((sum,m)=>sum+(m.cost||0),0).toFixed(2)}</p>
       `).join('');
     }
 
@@ -2979,6 +3117,7 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
         if (!m) return;
         editState.mods = m.id;
         document.getElementById('modDate').value = m.date || '';
+        document.getElementById('modOdometer').value = m.odometer || '';
         document.getElementById('modCategory').value = m.category || 'Other';
         document.getElementById('modPart').value = m.part || '';
         document.getElementById('modBrand').value = m.brand || '';
@@ -2989,12 +3128,24 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
         document.getElementById('modInstalled').checked = !!m.installed;
         document.getElementById('modRemovedDate').value = m.removedDate || '';
         document.getElementById('modRemovedDate').classList.toggle('hidden', !!m.installed);
+        document.getElementById('modRemovalReason').value = m.removalReason || '';
+        document.getElementById('modRemovalReason').classList.toggle('hidden', !!m.installed);
         modPhotoDataUrl = m.photo || null;
         const preview = document.getElementById('modPhotoPreview');
         if (m.photo) { preview.src = m.photo; preview.classList.remove('hidden'); }
         else { preview.classList.add('hidden'); preview.removeAttribute('src'); }
+        refreshModFollowUps();
         const form = document.getElementById('modsForm');
-        setEditBanner(form, `${t('editingEntry')} ${m.part}`, () => { form.reset(); exitModsEdit(); modPhotoDataUrl = null; preview.classList.add('hidden'); preview.removeAttribute('src'); document.getElementById('modRemovedDate').classList.add('hidden'); });
+        setEditBanner(form, `${t('editingEntry')} ${m.part}`, () => {
+          form.reset();
+          exitModsEdit();
+          modPhotoDataUrl = null;
+          preview.classList.add('hidden');
+          preview.removeAttribute('src');
+          document.getElementById('modRemovedDate').classList.add('hidden');
+          document.getElementById('modRemovalReason').classList.add('hidden');
+          refreshModFollowUps();
+        });
         form.querySelector('button[type="submit"]').textContent = t('updateEntry');
         form.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
@@ -3756,19 +3907,19 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
       ];
       for (const entry of demoFuel) await db.add('fuel', entry);
       const demoMods = [
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-04-01', category: 'Suspension', part: 'Lift Kit', brand: 'Rubicon Express', cost: 1900, installedBy: 'Shop', notes: '2.5" lift for better ground clearance', installed: true },
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-04-15', category: 'Bumper', part: 'Front Bumper', brand: 'Mopar', cost: 1200, installedBy: 'Shop', notes: 'Stainless steel front bumper upgrade', installed: true },
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-05-20', category: 'Tires/Wheels', part: 'All-Terrain Tires', brand: 'BFGoodrich', cost: 1400, installedBy: 'Shop', notes: '33" KO2 tires for off-road capability', installed: true },
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-06-01', category: 'Armor', part: 'Rock Rails', brand: 'ARB', cost: 850, installedBy: 'Shop', notes: 'Full length rock protection', installed: true },
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-07-10', category: 'Recovery', part: 'Tow Hooks', brand: 'ARB', cost: 180, installedBy: 'DIY', notes: 'Recovery points front and rear', installed: true },
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-08-20', category: 'Lighting', part: 'LED Light Bar', brand: 'Rigid Industries', cost: 650, installedBy: 'DIY', notes: '30" LED bar for night driving', installed: true },
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-09-05', category: 'Lighting', part: 'LED Fog Lights', brand: 'Rigid Industries', cost: 350, installedBy: 'Shop', notes: 'Improved visibility in fog', installed: true },
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-10-10', category: 'Recovery', part: 'Winch', brand: 'Warn', cost: 1100, installedBy: 'Shop', notes: '9500lb winch with synthetic rope', installed: true },
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-11-15', category: 'Interior', part: 'Tonneau Cover', brand: 'Truxedo', cost: 450, installedBy: 'DIY', notes: 'Hard tonneau cover for bed protection', installed: true },
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-01-05', category: 'Interior', part: 'Seat Covers', brand: 'WeatherTech', cost: 180, installedBy: 'DIY', notes: 'All-weather seat protection', installed: true },
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-02-10', category: 'Electrical', part: 'Backup Camera', brand: 'Mopar', cost: 280, installedBy: 'Shop', notes: 'Wireless backup camera system', installed: true },
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-03-01', category: 'Electrical', part: 'Aux Battery', brand: 'Optima', cost: 220, installedBy: 'DIY', notes: 'Secondary battery for accessories', installed: true },
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-05-01', category: 'Audio', part: 'Subwoofer', brand: 'Kicker', cost: 320, installedBy: 'DIY', notes: '10" subwoofer for better audio', installed: true }
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-04-01', odometer: 7800,  category: 'Suspension', part: 'Lift Kit', brand: 'Rubicon Express', cost: 1900, installedBy: 'Shop', notes: '2.5" lift for better ground clearance', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-04-15', odometer: 8100,  category: 'Bumper', part: 'Front Bumper', brand: 'Mopar', cost: 1200, installedBy: 'Shop', notes: 'Stainless steel front bumper upgrade', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-05-20', odometer: 8900,  category: 'Tires/Wheels', part: 'All-Terrain Tires', brand: 'BFGoodrich', cost: 1400, installedBy: 'Shop', notes: '33" KO2 tires for off-road capability', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-06-01', odometer: 9300,  category: 'Armor', part: 'Rock Rails', brand: 'ARB', cost: 850, installedBy: 'Shop', notes: 'Full length rock protection', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-07-10', odometer: 10100, category: 'Recovery', part: 'Tow Hooks', brand: 'ARB', cost: 180, installedBy: 'DIY', notes: 'Recovery points front and rear', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-08-20', odometer: 10500, category: 'Lighting', part: 'LED Light Bar', brand: 'Rigid Industries', cost: 650, installedBy: 'DIY', notes: '30" LED bar for night driving', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-09-05', odometer: 10700, category: 'Lighting', part: 'LED Fog Lights', brand: 'Rigid Industries', cost: 350, installedBy: 'Shop', notes: 'Improved visibility in fog', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-10-10', odometer: 11000, category: 'Recovery', part: 'Winch', brand: 'Warn', cost: 1100, installedBy: 'Shop', notes: '9500lb winch with synthetic rope', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-11-15', odometer: 11700, category: 'Interior', part: 'Tonneau Cover', brand: 'Truxedo', cost: 450, installedBy: 'DIY', notes: 'Hard tonneau cover for bed protection', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-01-05', odometer: 12900, category: 'Interior', part: 'Seat Covers', brand: 'WeatherTech', cost: 180, installedBy: 'DIY', notes: 'All-weather seat protection', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-02-10', odometer: 13400, category: 'Electrical', part: 'Backup Camera', brand: 'Mopar', cost: 280, installedBy: 'Shop', notes: 'Wireless backup camera system', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-03-01', odometer: 13700, category: 'Electrical', part: 'Aux Battery', brand: 'Optima', cost: 220, installedBy: 'DIY', notes: 'Secondary battery for accessories', installed: true },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-05-01', odometer: 14500, category: 'Audio', part: 'Subwoofer', brand: 'Kicker', cost: 320, installedBy: 'DIY', notes: '10" subwoofer for better audio', installed: true }
       ];
       for (const entry of demoMods) await db.add('mods', entry);
       const demoParts = [
