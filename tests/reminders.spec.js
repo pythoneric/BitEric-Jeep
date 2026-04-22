@@ -48,3 +48,23 @@ test('no active reminders shows placeholder', async ({ page }) => {
   await switchTab(page, 'dashboard');
   await expect(page.locator('#serviceReminders')).toContainText(/No upcoming|sin/i);
 });
+
+test('Log button jumps to Maintenance with type + intervals pre-filled', async ({ page }) => {
+  await startFresh(page);
+  await addMaintWithInterval(page, { date: '2026-04-20', odometer: 20000, miles: 750, months: 3 });
+  await switchTab(page, 'dashboard');
+  await expect(page.locator('.reminder-log').first()).toBeVisible();
+  await page.locator('.reminder-log').first().click();
+  // Tab flipped to Maintenance
+  await expect(page.locator('#maintenance:not(.hidden)')).toBeVisible();
+  // Type carried over from the reminder
+  await expect(page.locator('#mType')).toHaveValue('Oil change');
+  // Today's date pre-filled
+  const today = new Date();
+  const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  await expect(page.locator('#mDate')).toHaveValue(iso);
+  // Intervals carried over and the accordion opened
+  await expect(page.locator('#mIntervalMiles')).toHaveValue('750');
+  await expect(page.locator('#mIntervalMonths')).toHaveValue('3');
+  await expect(page.locator('.interval-details')).toHaveJSProperty('open', true);
+});

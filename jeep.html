@@ -1071,6 +1071,7 @@
         maintPhoto: "Receipt (optional)",
         noModsMatch: "No mods match your search.",
         noPartsMatch: "No parts match your search.",
+        logServiceBtn: "Log",
         snoozeBtn: "Snooze",
         dismissBtn: "Dismiss",
         snoozed: "Snoozed +500 mi / +30 days",
@@ -1489,6 +1490,7 @@
         maintPhoto: "Recibo (opcional)",
         noModsMatch: "Sin mods que coincidan.",
         noPartsMatch: "Sin piezas que coincidan.",
+        logServiceBtn: "Registrar",
         snoozeBtn: "Posponer",
         dismissBtn: "Descartar",
         snoozed: "Pospuesto +500 mi / +30 días",
@@ -2222,6 +2224,21 @@
       Chart.defaults.font.family = "'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
     }
 
+    // Create once, update thereafter. Destroying and recreating a Chart on
+    // every tab switch / language toggle / post-edit re-render is costly on
+    // mobile (visible 100-300ms hitches). With this helper a chart keeps its
+    // instance; only the `data` (and `options` if supplied) get swapped and
+    // `update()` animates the delta.
+    function upsertChart(instance, canvas, config) {
+      if (instance) {
+        instance.data = config.data;
+        if (config.options) instance.options = config.options;
+        instance.update();
+        return instance;
+      }
+      return new Chart(canvas, config);
+    }
+
     function estimateVehicleValue(vehicle) {
       if (vehicle.manualValue) return { value: vehicle.manualValue, manual: true };
       if (!vehicle.purchasePrice || !vehicle.purchaseDate) return null;
@@ -2304,6 +2321,7 @@
             return `<li class="reminder-item ${r.severity}">${escHtml(r.m.type)}${r.milesLabel}${r.dateLabel}${tag}
               ${bar}
               <span class="reminder-actions">
+                <button type="button" class="reminder-btn reminder-log" data-id="${r.m.id}">${escHtml(t('logServiceBtn'))}</button>
                 <button type="button" class="reminder-btn reminder-snooze" data-id="${r.m.id}">${escHtml(t('snoozeBtn'))}</button>
                 <button type="button" class="reminder-btn reminder-dismiss" data-id="${r.m.id}">${escHtml(t('dismissBtn'))}</button>
               </span>
@@ -2441,8 +2459,7 @@
       const maintSeries = monthSum(allMaintenance);
       const fuelSeries = monthSum(allFuel);
       const modsSeries = monthSum(allMods);
-      if (monthlyChartInstance) monthlyChartInstance.destroy();
-      monthlyChartInstance = new Chart(document.getElementById('monthlyChart'), {
+      monthlyChartInstance = upsertChart(monthlyChartInstance, document.getElementById('monthlyChart'), {
         type: 'bar',
         data: {
           labels,
@@ -2458,8 +2475,7 @@
           plugins: { tooltip: { callbacks: { label: currencyTooltipLabel } } }
         }
       });
-      if (costChartInstance) costChartInstance.destroy();
-      costChartInstance = new Chart(document.getElementById('costChart'), {
+      costChartInstance = upsertChart(costChartInstance, document.getElementById('costChart'), {
         type: 'pie',
         data: {
           labels: [t('tcoMaintenance'), t('tcoFuel'), t('tcoMods')],
@@ -2477,8 +2493,7 @@
         .filter(f => f.date && f.odometer > 0)
         .sort((a, b) => new Date(a.date) - new Date(b.date))
         .map(f => ({ x: new Date(f.date), y: f.odometer }));
-      if (mileageChartInstance) mileageChartInstance.destroy();
-      mileageChartInstance = new Chart(document.getElementById('mileageChart'), {
+      mileageChartInstance = upsertChart(mileageChartInstance, document.getElementById('mileageChart'), {
         type: 'line',
         data: { datasets: [{ label: t('cardMileage'), data: mileagePoints, borderColor: CHART_COLORS.maintenance, backgroundColor: CHART_COLORS.maintenance, pointRadius: 2, tension: 0.2 }] },
         options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time' } }, plugins: { legend: { display: false } } }
@@ -2494,8 +2509,7 @@
       const catLabels = MAINT_CAT_ORDER.filter(c => byCat[c]).map(c => t(MAINT_CAT_I18N[c]));
       const catData = MAINT_CAT_ORDER.filter(c => byCat[c]).map(c => byCat[c]);
       const catColors = MAINT_CAT_ORDER.filter(c => byCat[c]).map((_, i) => CHART_COLORS.categorical[i % CHART_COLORS.categorical.length]);
-      if (maintCategoryChartInstance) maintCategoryChartInstance.destroy();
-      maintCategoryChartInstance = new Chart(document.getElementById('maintCategoryChart'), {
+      maintCategoryChartInstance = upsertChart(maintCategoryChartInstance, document.getElementById('maintCategoryChart'), {
         type: 'doughnut',
         data: { labels: catLabels, datasets: [{ data: catData, backgroundColor: catColors }] },
         options: {
@@ -2569,15 +2583,52 @@
       preview.classList.remove('hidden');
     });
 
-    // Service reminders snooze/dismiss
+    // Service reminders: Log service / Snooze / Dismiss
     document.getElementById('serviceReminders').addEventListener('click', async (e) => {
+      const log = e.target.closest('.reminder-log');
       const snooze = e.target.closest('.reminder-snooze');
       const dismiss = e.target.closest('.reminder-dismiss');
-      if (!snooze && !dismiss) return;
-      const id = (snooze || dismiss).dataset.id;
+      if (!log && !snooze && !dismiss) return;
+      const id = (log || snooze || dismiss).dataset.id;
       const items = await db.getAll('maintenance');
       const m = items.find(x => x.id === id);
       if (!m) return;
+      if (log) {
+        // Hop to Maintenance with the reminder's type + today's date pre-filled,
+        // plus the original interval so saving re-creates a fresh reminder
+        // without the user re-typing intervals. We don't auto-dismiss the old
+        // reminder — the user might cancel the entry; dismissing on submit
+        // would require tracking origin state across the form lifecycle.
+        if (editState.maintenance) {
+          document.getElementById('maintenanceForm').reset();
+          exitMaintenanceEdit();
+          maintPhotoDataUrl = null;
+          const preview = document.getElementById('mPhotoPreview');
+          preview.classList.add('hidden');
+          preview.removeAttribute('src');
+        }
+        switchTab('maintenance');
+        const form = document.getElementById('maintenanceForm');
+        document.getElementById('mDate').value = todayIsoLocal();
+        const known = Array.from(document.getElementById('mType').options).some(o => o.value === m.type);
+        if (known) {
+          document.getElementById('mType').value = m.type;
+          document.getElementById('mOtherType').value = '';
+        } else {
+          document.getElementById('mType').value = 'Other';
+          document.getElementById('mOtherType').value = m.type;
+        }
+        document.getElementById('mType').dispatchEvent(new Event('change'));
+        if (m.intervalMiles) document.getElementById('mIntervalMiles').value = m.intervalMiles;
+        if (m.intervalMonths) document.getElementById('mIntervalMonths').value = m.intervalMonths;
+        if (m.intervalMiles || m.intervalMonths) {
+          const details = form.querySelector('.interval-details');
+          if (details) details.open = true;
+        }
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('mOdometer').focus();
+        return;
+      }
       if (snooze) {
         if (m.nextDueMiles) m.nextDueMiles += 500;
         if (m.nextDueDate) {
@@ -3029,8 +3080,7 @@
       const fuel = (await db.getAll('fuel')).filter(f => f.vehicleId === activeVehicleId).sort((a,b) => new Date(a.date) - new Date(b.date));
       computeMpg(fuel);
       const mpgData = fuel.filter(f => f.mpg != null).map(f => ({ x: new Date(f.date), y: f.mpg }));
-      if (mpgChartInstance) mpgChartInstance.destroy();
-      mpgChartInstance = new Chart(document.getElementById('mpgChart'), {
+      mpgChartInstance = upsertChart(mpgChartInstance, document.getElementById('mpgChart'), {
         type: 'line',
         data: { datasets: [{ label: t('mpgChartLabel'), data: mpgData, borderColor: CHART_COLORS.fuel, backgroundColor: CHART_COLORS.fuel, tension: 0.2 }] },
         options: { scales: { x: { type: 'time' } } }
@@ -3038,8 +3088,7 @@
       const priceData = fuel
         .filter(f => f.gallons > 0)
         .map(f => ({ x: new Date(f.date), y: f.cost / f.gallons }));
-      if (priceChartInstance) priceChartInstance.destroy();
-      priceChartInstance = new Chart(document.getElementById('priceChart'), {
+      priceChartInstance = upsertChart(priceChartInstance, document.getElementById('priceChart'), {
         type: 'line',
         data: { datasets: [{ label: `${currencySym()}/gal`, data: priceData, borderColor: CHART_COLORS.warn, backgroundColor: CHART_COLORS.warn, tension: 0.2 }] },
         options: {
@@ -3065,8 +3114,7 @@
         return arr.reduce((a, b) => a + b, 0) / arr.length;
       });
       const condColors = condLabels.map(c => CHART_COLORS.drivingConditions[c] || CHART_COLORS.neutral);
-      if (mpgByConditionChartInstance) mpgByConditionChartInstance.destroy();
-      mpgByConditionChartInstance = new Chart(document.getElementById('mpgByConditionChart'), {
+      mpgByConditionChartInstance = upsertChart(mpgByConditionChartInstance, document.getElementById('mpgByConditionChart'), {
         type: 'bar',
         data: { labels: condLabels, datasets: [{ label: t('mpgChartLabel'), data: condData, backgroundColor: condColors }] },
         options: {
@@ -3158,8 +3206,7 @@
       const labels = [t('overdue'), t('dueSoon'), t('reminderOnSchedule')];
       const data = [overdue, dueSoon, upcoming];
       const colors = [CHART_COLORS.over, CHART_COLORS.warn, CHART_COLORS.good];
-      if (maintReminderStatusChartInstance) maintReminderStatusChartInstance.destroy();
-      maintReminderStatusChartInstance = new Chart(document.getElementById('maintReminderStatusChart'), {
+      maintReminderStatusChartInstance = upsertChart(maintReminderStatusChartInstance, document.getElementById('maintReminderStatusChart'), {
         type: 'doughnut',
         data: { labels, datasets: [{ data, backgroundColor: colors }] },
         options: { responsive: true, maintainAspectRatio: false }
@@ -3251,8 +3298,7 @@
       const labels = entries.map(([k]) => k);
       const data = entries.map(([, v]) => v);
       const barColors = labels.map((_, i) => CHART_COLORS.categorical[i % CHART_COLORS.categorical.length]);
-      if (partsInventoryChartInstance) partsInventoryChartInstance.destroy();
-      partsInventoryChartInstance = new Chart(document.getElementById('partsInventoryChart'), {
+      partsInventoryChartInstance = upsertChart(partsInventoryChartInstance, document.getElementById('partsInventoryChart'), {
         type: 'bar',
         data: { labels, datasets: [{ label: currencySym(), data, backgroundColor: barColors }] },
         options: {
@@ -3663,8 +3709,7 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
       const labels = entries.map(([k]) => k);
       const data = entries.map(([, v]) => v);
       const barColors = labels.map((_, i) => CHART_COLORS.categorical[i % CHART_COLORS.categorical.length]);
-      if (modsCategoryChartInstance) modsCategoryChartInstance.destroy();
-      modsCategoryChartInstance = new Chart(document.getElementById('modsCategoryChart'), {
+      modsCategoryChartInstance = upsertChart(modsCategoryChartInstance, document.getElementById('modsCategoryChart'), {
         type: 'bar',
         data: { labels, datasets: [{ label: currencySym(), data, backgroundColor: barColors }] },
         options: {
@@ -3911,8 +3956,7 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
       const labels = CONDITION_ORDER.filter(c => counts[c] > 0);
       const data = labels.map(c => counts[c]);
       const colors = labels.map(c => CHART_COLORS.trailConditions[c] || CHART_COLORS.neutral);
-      if (trailsConditionChartInstance) trailsConditionChartInstance.destroy();
-      trailsConditionChartInstance = new Chart(document.getElementById('trailsConditionChart'), {
+      trailsConditionChartInstance = upsertChart(trailsConditionChartInstance, document.getElementById('trailsConditionChart'), {
         type: 'doughnut',
         data: { labels, datasets: [{ data, backgroundColor: colors }] },
         options: { responsive: true, maintainAspectRatio: false }
