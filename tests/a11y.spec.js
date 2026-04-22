@@ -142,3 +142,47 @@ test('cache info reports cached items and size', async ({ page }) => {
   // May be empty if no SW cache yet, but should render (not throw)
   await expect(page.locator('#cacheInfo')).toBeVisible();
 });
+
+test('tabs are <button>s with ARIA tab pattern wiring', async ({ page }) => {
+  await startFresh(page);
+  await switchTab(page, 'dashboard'); // startFresh lands on Settings; normalize
+  const dashboardTab = page.locator('[data-tab="dashboard"]');
+  await expect(dashboardTab).toHaveAttribute('role', 'tab');
+  await expect(dashboardTab).toHaveAttribute('aria-selected', 'true');
+  await expect(dashboardTab).toHaveAttribute('aria-controls', 'dashboard');
+  // Roving tabindex: only the active tab is in the tab order
+  const activeIdx = await dashboardTab.getAttribute('tabindex');
+  expect(activeIdx).toBe('0');
+  const inactiveIdx = await page.locator('[data-tab="maintenance"]').getAttribute('tabindex');
+  expect(inactiveIdx).toBe('-1');
+  // The corresponding panel has role=tabpanel + aria-labelledby
+  await expect(page.locator('#dashboard')).toHaveAttribute('role', 'tabpanel');
+  await expect(page.locator('#dashboard')).toHaveAttribute('aria-labelledby', 'tab-dashboard');
+});
+
+test('ArrowRight / ArrowLeft cycle tabs with WAI-ARIA pattern', async ({ page }) => {
+  await startFresh(page);
+  await switchTab(page, 'dashboard');
+  await page.locator('[data-tab="dashboard"]').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('[data-tab="maintenance"]')).toHaveAttribute('aria-selected', 'true');
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.locator('[data-tab="dashboard"]')).toHaveAttribute('aria-selected', 'true');
+  await page.keyboard.press('End');
+  await expect(page.locator('[data-tab="settings"]')).toHaveAttribute('aria-selected', 'true');
+  await page.keyboard.press('Home');
+  await expect(page.locator('[data-tab="dashboard"]')).toHaveAttribute('aria-selected', 'true');
+});
+
+test('shortcuts modal traps Tab inside itself', async ({ page }) => {
+  await startFresh(page);
+  await page.locator('body').click({ position: { x: 1, y: 1 } });
+  await page.keyboard.press('?');
+  await expect(page.locator('#shortcutsModal.open')).toBeVisible();
+  // First focusable in the modal is the Close button — Tab from it should wrap
+  // back to itself (it is the only focusable inside).
+  await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe('shortcutsClose');
+  await page.keyboard.press('Tab');
+  await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe('shortcutsClose');
+  await page.keyboard.press('Escape');
+});

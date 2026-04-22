@@ -55,8 +55,11 @@ test('tabs carry accessible role and are keyboard-activatable', async ({ page })
   await expect(page.locator('nav.tabs')).toHaveAttribute('role', 'tablist');
   const roles = await page.locator('.tab').evaluateAll((els) => els.map((e) => e.getAttribute('role')));
   expect(roles.every((r) => r === 'tab')).toBe(true);
+  // Roving tabindex (WAI-ARIA tab pattern): exactly one active tab carries
+  // tabindex=0, the rest are -1 so the group is a single tabstop.
   const indices = await page.locator('.tab').evaluateAll((els) => els.map((e) => e.getAttribute('tabindex')));
-  expect(indices.every((i) => i === '0')).toBe(true);
+  expect(indices.filter((i) => i === '0')).toHaveLength(1);
+  expect(indices.filter((i) => i === '-1')).toHaveLength(indices.length - 1);
   // Enter on a focused tab activates it
   await page.locator('[data-tab="fuel"]').focus();
   await page.keyboard.press('Enter');

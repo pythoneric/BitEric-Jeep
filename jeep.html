@@ -45,7 +45,7 @@
     body.light select, body.light button { background: var(--light-accent); }
     .tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); overflow-x: auto; -webkit-overflow-scrolling: touch; }
     body.light .tabs { background: var(--light-card); border-bottom-color: var(--light-border); }
-    .tab { flex: 1 1 0; min-width: 0; padding: 1rem 0.5rem; text-align: center; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); transition: background 0.15s; }
+    .tab { flex: 1 1 0; min-width: 0; padding: 1rem 0.5rem; text-align: center; cursor: pointer; border: 0; border-bottom: 2px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); background: transparent; font: inherit; transition: background 0.15s; }
     body.light .tab { color: var(--light-text); }
     .tab:hover { background: rgba(255, 255, 255, 0.05); }
     body.light .tab:hover { background: rgba(0, 0, 0, 0.04); }
@@ -85,7 +85,7 @@
       input, select, textarea { padding: 0.75rem 0.9rem; border-radius: 0.75rem; }
       .btn, button[type="submit"] { min-height: 44px; padding: 0.75rem 1rem; border-radius: 0.75rem; } /* touch target */
       .vehicle-chip { min-height: 44px; padding: 0.55rem 0.9rem; }
-      .del-btn, .edit-btn { min-width: 2.5rem; min-height: 2.5rem; font-size: 1rem; }
+      .del-btn, .edit-btn { min-width: 2.75rem; min-height: 2.75rem; font-size: 1rem; }
       .reminder-btn { min-height: 32px; padding: 0.3rem 0.6rem; }
       form { gap: 0.75rem; }
       .tab { padding: 0.9rem 0.3rem; font-size: 0.8rem; }
@@ -193,7 +193,7 @@
     .template-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
     .template-row select { flex: 1; min-width: 200px; }
     .report-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
-    .row-actions { display: flex; gap: 0.25rem; flex-shrink: 0; }
+    .row-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
     .del-btn, .edit-btn { background: transparent; color: var(--text); padding: 0 0.35rem; font-size: 0.85rem; border: 1px solid transparent; border-radius: 0.25rem; cursor: pointer; }
     .del-btn { color: #dc2626; }
     .del-btn:hover { background: rgba(220, 38, 38, 0.15); border-color: #dc2626; }
@@ -294,16 +294,16 @@
     </div>
   </header>
   <nav class="tabs" role="tablist" aria-label="Primary navigation">
-    <div class="tab active" data-tab="dashboard" role="tab" tabindex="0"><span class="tab-icon" aria-hidden="true">🏠</span><span data-i18n="tabDashboard">Dashboard</span></div>
-    <div class="tab" data-tab="maintenance" role="tab" tabindex="0"><span class="tab-icon" aria-hidden="true">🔧</span><span data-i18n="tabMaintenance">Maintenance</span></div>
-    <div class="tab" data-tab="fuel" role="tab" tabindex="0"><span class="tab-icon" aria-hidden="true">⛽</span><span data-i18n="tabFuel">Fuel</span></div>
-    <div class="tab" data-tab="mods" role="tab" tabindex="0"><span class="tab-icon" aria-hidden="true">✨</span><span data-i18n="tabMods">Mods</span></div>
-    <div class="tab" data-tab="trails" role="tab" tabindex="0"><span class="tab-icon" aria-hidden="true">🏔</span><span data-i18n="tabTrails">Trails</span></div>
-    <div class="tab" data-tab="parts" role="tab" tabindex="0"><span class="tab-icon" aria-hidden="true">📦</span><span data-i18n="tabParts">Parts</span></div>
-    <div class="tab" data-tab="settings" role="tab" tabindex="0"><span class="tab-icon" aria-hidden="true">⚙️</span><span data-i18n="tabSettings">Settings</span></div>
+    <button type="button" class="tab active" data-tab="dashboard" id="tab-dashboard" role="tab" aria-selected="true" aria-controls="dashboard" tabindex="0"><span class="tab-icon" aria-hidden="true">🏠</span><span data-i18n="tabDashboard">Dashboard</span></button>
+    <button type="button" class="tab" data-tab="maintenance" id="tab-maintenance" role="tab" aria-selected="false" aria-controls="maintenance" tabindex="-1"><span class="tab-icon" aria-hidden="true">🔧</span><span data-i18n="tabMaintenance">Maintenance</span></button>
+    <button type="button" class="tab" data-tab="fuel" id="tab-fuel" role="tab" aria-selected="false" aria-controls="fuel" tabindex="-1"><span class="tab-icon" aria-hidden="true">⛽</span><span data-i18n="tabFuel">Fuel</span></button>
+    <button type="button" class="tab" data-tab="mods" id="tab-mods" role="tab" aria-selected="false" aria-controls="mods" tabindex="-1"><span class="tab-icon" aria-hidden="true">✨</span><span data-i18n="tabMods">Mods</span></button>
+    <button type="button" class="tab" data-tab="trails" id="tab-trails" role="tab" aria-selected="false" aria-controls="trails" tabindex="-1"><span class="tab-icon" aria-hidden="true">🏔</span><span data-i18n="tabTrails">Trails</span></button>
+    <button type="button" class="tab" data-tab="parts" id="tab-parts" role="tab" aria-selected="false" aria-controls="parts" tabindex="-1"><span class="tab-icon" aria-hidden="true">📦</span><span data-i18n="tabParts">Parts</span></button>
+    <button type="button" class="tab" data-tab="settings" id="tab-settings" role="tab" aria-selected="false" aria-controls="settings" tabindex="-1"><span class="tab-icon" aria-hidden="true">⚙️</span><span data-i18n="tabSettings">Settings</span></button>
   </nav>
   <main class="content">
-    <div id="dashboard" class="tab-content">
+    <div id="dashboard" class="tab-content" role="tabpanel" aria-labelledby="tab-dashboard">
       <div class="card">
         <h3 data-i18n="serviceReminders">Service Reminders</h3>
         <ul id="serviceReminders"></ul>
@@ -375,7 +375,7 @@
         </div>
       </div>
     </div>
-    <div id="maintenance" class="tab-content hidden">
+    <div id="maintenance" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-maintenance">
       <div class="card">
         <h2 data-i18n="maintenanceLog">Maintenance Log</h2>
         <div class="template-row">
@@ -509,7 +509,7 @@
         <ul id="maintenanceList"></ul>
       </div>
     </div>
-    <div id="fuel" class="tab-content hidden">
+    <div id="fuel" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-fuel">
       <div class="card">
         <h2 data-i18n="fuelLog">Fuel Log</h2>
         <form id="fuelForm">
@@ -557,7 +557,7 @@
         <ul id="fuelList"></ul>
       </div>
     </div>
-    <div id="mods" class="tab-content hidden">
+    <div id="mods" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-mods">
       <div class="card">
         <h2 data-i18n="modsLog">Modifications</h2>
         <form id="modsForm">
@@ -617,7 +617,7 @@
         <div id="modsList"></div>
       </div>
     </div>
-    <div id="trails" class="tab-content hidden">
+    <div id="trails" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-trails">
       <div class="card">
         <h2 data-i18n="trailsLog">Trail Log</h2>
         <form id="trailsForm">
@@ -656,7 +656,7 @@
         <ul id="trailsList"></ul>
       </div>
     </div>
-    <div id="parts" class="tab-content hidden">
+    <div id="parts" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-parts">
       <div class="card">
         <h2 data-i18n="partsInventory">Parts Inventory</h2>
         <form id="partsForm">
@@ -687,7 +687,7 @@
         <div id="partsList"></div>
       </div>
     </div>
-    <div id="settings" class="tab-content hidden">
+    <div id="settings" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-settings">
       <div class="card">
         <h2 data-i18n="settings">Settings</h2>
         <h3 data-i18n="addVehicle">Add Vehicle</h3>
@@ -812,7 +812,7 @@
     </div>
   </div>
   <div id="toast" class="toast hidden" role="status" aria-live="polite"><span id="toastMsg"></span><button type="button" id="toastAction" class="toast-action"></button></div>
-  <div id="lightbox" class="lightbox" role="dialog" aria-label="Photo viewer"><img id="lightboxImg" alt=""></div>
+  <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer" tabindex="-1"><img id="lightboxImg" alt=""></div>
   <div id="shortcutsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
     <div class="modal-card">
       <h3 id="shortcutsTitle" data-i18n="shortcutsTitle">Keyboard shortcuts</h3>
@@ -1879,6 +1879,7 @@
       { name: 'trails', keyPath: 'id', indexes: [{ name: 'vehicleId', keyPath: 'vehicleId' }] }
     ];
     const ALL_STORES = stores.map(s => s.name);
+    const TAB_ORDER = ['dashboard', 'maintenance', 'fuel', 'mods', 'trails', 'parts', 'settings'];
 
     // Seed data
     // UI functions
@@ -1940,6 +1941,39 @@
       if (navigator.vibrate) { try { navigator.vibrate(ms); } catch {} }
     }
 
+    // Modal focus management. On open, stash the currently-focused element,
+    // move focus into the modal, and trap Tab/Shift-Tab within it so keyboard
+    // users can't accidentally tab back to the underlying form. On close,
+    // restore focus to wherever the user was before opening the modal.
+    const MODAL_FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const modalPriorFocus = new WeakMap();
+    function openModal(modalEl) {
+      if (!modalEl) return;
+      modalPriorFocus.set(modalEl, document.activeElement);
+      modalEl.classList.add('open');
+      const focusables = modalEl.querySelectorAll(MODAL_FOCUSABLE);
+      // Fall back to the modal itself when it has no interactive children —
+      // keeps screen readers aware the dialog is now active (e.g. the lightbox).
+      if (focusables[0]) focusables[0].focus();
+      else if (modalEl.getAttribute('tabindex') != null) modalEl.focus();
+    }
+    function closeModal(modalEl) {
+      if (!modalEl) return;
+      modalEl.classList.remove('open');
+      const prior = modalPriorFocus.get(modalEl);
+      modalPriorFocus.delete(modalEl);
+      if (prior && document.contains(prior) && typeof prior.focus === 'function') prior.focus();
+    }
+    function trapTab(modalEl, e) {
+      if (e.key !== 'Tab') return;
+      const focusables = [...modalEl.querySelectorAll(MODAL_FOCUSABLE)].filter(el => !el.disabled && el.offsetParent !== null);
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+
     async function autofillFormDefaults(tab) {
       const today = new Date().toISOString().split('T')[0];
       const vehicle = activeVehicleId ? (await db.getAll('vehicles')).find(v => v.id === activeVehicleId) : null;
@@ -1958,8 +1992,12 @@
     }
 
     function switchTab(tab) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+      document.querySelectorAll('.tab').forEach(t => {
+        const on = t.dataset.tab === tab;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        t.tabIndex = on ? 0 : -1; // roving tabindex
+      });
       document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
       document.getElementById(tab).classList.remove('hidden');
       localStorage.setItem('lastTab', tab);
@@ -1995,6 +2033,7 @@
           chip.dataset.id = v.id;
           chip.setAttribute('role', 'radio');
           chip.setAttribute('aria-checked', isActive ? 'true' : 'false');
+          chip.tabIndex = isActive ? 0 : -1; // roving tabindex for the radiogroup
           chip.textContent = v.nickname;
           switcher.appendChild(chip);
         });
@@ -4216,8 +4255,7 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
     });
 
     // Events
-    document.getElementById('vehicleSwitcher').addEventListener('click', (e) => {
-      const chip = e.target.closest('.vehicle-chip');
+    function selectVehicleChip(chip) {
       if (!chip || chip.classList.contains('active')) return;
       haptic(6);
       activeVehicleId = chip.dataset.id;
@@ -4226,6 +4264,7 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
         const on = c === chip;
         c.classList.toggle('active', on);
         c.setAttribute('aria-checked', on ? 'true' : 'false');
+        c.tabIndex = on ? 0 : -1;
       });
       loadDashboard();
       loadMaintenance();
@@ -4233,6 +4272,25 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       loadMods();
       loadParts();
       loadTrails();
+    }
+    document.getElementById('vehicleSwitcher').addEventListener('click', (e) => {
+      const chip = e.target.closest('.vehicle-chip');
+      if (chip) selectVehicleChip(chip);
+    });
+    document.getElementById('vehicleSwitcher').addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Home' && e.key !== 'End') return;
+      const chips = [...document.querySelectorAll('#vehicleSwitcher .vehicle-chip')];
+      if (chips.length < 2) return;
+      const idx = chips.indexOf(document.activeElement);
+      if (idx < 0) return;
+      let next = idx;
+      if (e.key === 'ArrowLeft')  next = (idx - 1 + chips.length) % chips.length;
+      if (e.key === 'ArrowRight') next = (idx + 1) % chips.length;
+      if (e.key === 'Home')       next = 0;
+      if (e.key === 'End')        next = chips.length - 1;
+      e.preventDefault();
+      selectVehicleChip(chips[next]);
+      chips[next].focus();
     });
 
     document.getElementById('langToggle').addEventListener('click', () => {
@@ -4280,25 +4338,33 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
         const modal = document.getElementById('currencyModal');
         const usd = document.getElementById('currencyUsdBtn');
         const dop = document.getElementById('currencyDopBtn');
-        modal.classList.add('open');
-        const choose = (cur) => {
+        const cleanup = () => {
           usd.removeEventListener('click', onUsd);
           dop.removeEventListener('click', onDop);
+          modal.removeEventListener('keydown', onKey);
+        };
+        const choose = (cur) => {
+          cleanup();
           currency = cur;
           localStorage.setItem('currency', cur);
-          modal.classList.remove('open');
+          closeModal(modal);
           setLang(lang);
           resolve(cur);
         };
+        const cancel = () => { cleanup(); closeModal(modal); resolve(null); };
         const onUsd = () => choose('USD');
         const onDop = () => choose('DOP');
+        const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); cancel(); } else trapTab(modal, e); };
         usd.addEventListener('click', onUsd);
         dop.addEventListener('click', onDop);
+        modal.addEventListener('keydown', onKey);
+        openModal(modal);
       });
     }
 
     document.getElementById('startFreshBtn').addEventListener('click', async () => {
-      await pickCurrency();
+      const chosen = await pickCurrency();
+      if (!chosen) return; // user pressed Escape
       showLoaderSpinner(true);
       await db.clearAll(ALL_STORES);
       localStorage.removeItem('activeVehicleId');
@@ -4394,11 +4460,25 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
     // support, so on the loader it looked like nothing happened.
     document.getElementById('clearCacheLoaderBtn').addEventListener('click', hardReload);
 
+    // Tab buttons: click + WAI-ARIA arrow-key pattern. Enter/Space come free
+    // with <button>. Left/Right cycle focus AND activate (auto-activation),
+    // which is the common pattern for tab lists.
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => { haptic(4); switchTab(tab.dataset.tab); });
-      tab.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchTab(tab.dataset.tab); }
-      });
+    });
+    document.querySelector('.tabs').addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Home' && e.key !== 'End') return;
+      const current = document.querySelector('.tab.active')?.dataset.tab;
+      const idx = TAB_ORDER.indexOf(current);
+      if (idx < 0) return;
+      let next = idx;
+      if (e.key === 'ArrowLeft')  next = (idx - 1 + TAB_ORDER.length) % TAB_ORDER.length;
+      if (e.key === 'ArrowRight') next = (idx + 1) % TAB_ORDER.length;
+      if (e.key === 'Home')       next = 0;
+      if (e.key === 'End')        next = TAB_ORDER.length - 1;
+      e.preventDefault();
+      switchTab(TAB_ORDER[next]);
+      document.querySelector(`.tab[data-tab="${TAB_ORDER[next]}"]`).focus();
     });
 
     // Elevate the sticky header with a shadow once the user scrolls off the top.
@@ -4411,8 +4491,7 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       }
     }, { passive: true });
 
-    // Keyboard: 1-6 switches tabs, ? opens help, Escape cancels edit / closes modals
-    const tabOrder = ['dashboard', 'maintenance', 'fuel', 'mods', 'trails', 'parts', 'settings'];
+    // Keyboard: 1-7 switches tabs, ? opens help, Escape cancels edit / closes modals
     document.addEventListener('keydown', (e) => {
       if (document.getElementById('loader').style.display !== 'none') return;
       const tag = document.activeElement?.tagName;
@@ -4420,21 +4499,22 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       if (!inField && !e.metaKey && !e.ctrlKey && !e.altKey) {
         if (/^[1-7]$/.test(e.key)) {
           e.preventDefault();
-          switchTab(tabOrder[+e.key - 1]);
+          switchTab(TAB_ORDER[+e.key - 1]);
           return;
         }
         if (e.key === '?') {
           e.preventDefault();
-          document.getElementById('shortcutsModal').classList.add('open');
-          document.getElementById('shortcutsClose').focus();
+          openModal(document.getElementById('shortcutsModal'));
           return;
         }
       }
       if (e.key === 'Escape') {
         const lb = document.getElementById('lightbox');
         const sm = document.getElementById('shortcutsModal');
-        if (lb.classList.contains('open')) { lb.classList.remove('open'); return; }
-        if (sm.classList.contains('open')) { sm.classList.remove('open'); return; }
+        if (lb.classList.contains('open')) { closeModal(lb); return; }
+        if (sm.classList.contains('open')) { closeModal(sm); return; }
+        // currencyModal handles its own Escape inside pickCurrency() — closing
+        // here would leave the awaiting promise dangling and hang Start Fresh.
         if (editState.maintenance) { document.getElementById('maintenanceForm').reset(); exitMaintenanceEdit(); }
         if (editState.fuel) { document.getElementById('fuelForm').reset(); exitFuelEdit(); }
         if (editState.mods) { document.getElementById('modsForm').reset(); exitModsEdit(); }
@@ -4450,10 +4530,13 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
     });
 
     document.getElementById('shortcutsClose').addEventListener('click', () => {
-      document.getElementById('shortcutsModal').classList.remove('open');
+      closeModal(document.getElementById('shortcutsModal'));
     });
     document.getElementById('shortcutsModal').addEventListener('click', (e) => {
-      if (e.target.id === 'shortcutsModal') e.target.classList.remove('open');
+      if (e.target.id === 'shortcutsModal') closeModal(e.target);
+    });
+    document.getElementById('shortcutsModal').addEventListener('keydown', (e) => {
+      trapTab(document.getElementById('shortcutsModal'), e);
     });
 
     // Lightbox: click any .photo-thumb to open full size
@@ -4462,11 +4545,11 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       if (thumb && thumb.src) {
         const lb = document.getElementById('lightbox');
         document.getElementById('lightboxImg').src = thumb.src;
-        lb.classList.add('open');
+        openModal(lb);
       }
     });
     document.getElementById('lightbox').addEventListener('click', (e) => {
-      e.currentTarget.classList.remove('open');
+      closeModal(e.currentTarget);
     });
 
     // Drag-and-drop JSON import
