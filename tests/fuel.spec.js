@@ -235,6 +235,17 @@ test('warns when Regular 87 is logged on a premium-required 2.0L Turbo', async (
   expect(dialogs.some((m) => /premium|91/i.test(m))).toBe(true);
 });
 
+test('4xe PHEV is treated as premium-required (Regular 87 warns)', async ({ page }) => {
+  await startFresh(page);
+  await setEngine(page, '4xe PHEV');
+  const dialogs = [];
+  page.on('dialog', (d) => { dialogs.push(d.message()); d.dismiss(); });
+  await fillFuel(page, { fuelType: 'Regular' });
+  await page.click('#fuelForm button[type="submit"]');
+  await page.waitForTimeout(400);
+  expect(dialogs.some((m) => /premium|91/i.test(m))).toBe(true);
+});
+
 test('Premium on a 2.0T does NOT trigger a warning', async ({ page }) => {
   await startFresh(page);
   await setEngine(page, '2.0L Turbo');

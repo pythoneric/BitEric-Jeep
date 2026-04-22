@@ -226,6 +226,28 @@ test('axle-ratio datalist exposes the common Jeep ratios', async ({ page }) => {
   expect(ratios).toEqual(expect.arrayContaining(['3.21', '3.45', '3.73', '4.10', '4.56', '4.88', '5.13', '5.38']));
 });
 
+test('axleRatio "3.73:1" is normalized for regear match', async ({ page }) => {
+  await startFresh(page);
+  await switchTab(page, 'settings');
+  await page.evaluate(() => {
+    const d = document.querySelector('#editVehicleForm .drivetrain-details');
+    if (d) d.open = true;
+  });
+  await page.fill('#eAxleRatio', '3.73:1');
+  await page.click('#editVehicleForm button[type="submit"]');
+  await switchTab(page, 'mods');
+  const dialogs = [];
+  page.on('dialog', (d) => { dialogs.push(d.message()); d.dismiss(); });
+  await page.fill('#modDate', '2024-01-01');
+  await page.fill('#modOdometer', '15000');
+  await page.selectOption('#modCategory', 'Tires/Wheels');
+  await page.fill('#modPart', '37x12.50R17 mud terrains');
+  await page.fill('#modCost', '2000');
+  await page.click('#modsForm button[type="submit"]');
+  await page.waitForTimeout(400);
+  expect(dialogs.some((m) => /regear|4\.56|4\.88/i.test(m))).toBe(true);
+});
+
 test('free-text axleRatio like "3.73 stock" still triggers regear warning on 35" tires', async ({ page }) => {
   await startFresh(page);
   await switchTab(page, 'settings');
@@ -401,6 +423,44 @@ test('cancelling the replace confirm aborts without wiping data', async ({ page 
   await page.click('#importBtn');
   await page.waitForTimeout(300);
   await expect(page.locator('#vehicleSwitcher')).toContainText('Gladiator Demo');
+});
+
+test('import warns on a newer schema version than the running app', async ({ page }) => {
+  await startFresh(page);
+  await switchTab(page, 'settings');
+  const payload = {
+    schemaVersion: 999, // impossibly far future
+    vehicles: [{ id: 'veh-1', nickname: 'Future Jeep' }],
+  };
+  await page.setInputFiles('#importFile', {
+    name: 'future.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(payload)),
+  });
+  const dialogs = [];
+  page.on('dialog', (d) => { dialogs.push(d.message()); d.dismiss(); });
+  await page.click('#importBtn');
+  await page.waitForTimeout(200);
+  expect(dialogs.some((m) => /newer version|versión más nueva/i.test(m))).toBe(true);
+});
+
+test('import warns on an older schema version than the running app', async ({ page }) => {
+  await startFresh(page);
+  await switchTab(page, 'settings');
+  const payload = {
+    // No schemaVersion key → treated as 0 (older).
+    vehicles: [{ id: 'veh-1', nickname: 'Ancient Jeep' }],
+  };
+  await page.setInputFiles('#importFile', {
+    name: 'ancient.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(payload)),
+  });
+  const dialogs = [];
+  page.on('dialog', (d) => { dialogs.push(d.message()); d.dismiss(); });
+  await page.click('#importBtn');
+  await page.waitForTimeout(200);
+  expect(dialogs.some((m) => /older version|versión anterior/i.test(m))).toBe(true);
 });
 
 test('export → clear → import round-trip restores the vehicle', async ({ page }) => {

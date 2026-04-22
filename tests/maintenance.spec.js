@@ -76,12 +76,16 @@ test('can delete a maintenance entry and undo via toast', async ({ page }) => {
 test('search filters the maintenance history', async ({ page }) => {
   await loadDemoTruck(page);
   await switchTab(page, 'maintenance');
-  const total = await page.locator('#maintenanceList li').count();
-  expect(total).toBeGreaterThan(1);
+  // Demo seeds 10 maintenance entries — wait for the list to finish populating
+  // (loadMaintenance now also renders a reminder-status chart on the side)
+  // before we start measuring filter effects.
+  const allRows = page.locator('#maintenanceList li');
+  await expect(allRows).toHaveCount(10);
   await page.fill('#maintenanceSearch', 'oil');
-  const filtered = await page.locator('#maintenanceList li').count();
-  expect(filtered).toBeGreaterThan(0);
-  expect(filtered).toBeLessThan(total);
+  // Three demo entries contain "Oil change" — two Oil change + one Oil-filter
+  // row if we had it; here the demo has exactly two "Oil change" rows.
+  const filtered = page.locator('#maintenanceList li');
+  await expect(filtered).toHaveCount(2);
   await page.fill('#maintenanceSearch', 'xyzNOMATCH');
   await expect(page.locator('#maintenanceList .empty-state')).toBeVisible();
 });
