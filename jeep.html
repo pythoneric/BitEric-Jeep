@@ -816,7 +816,7 @@
     <div class="modal-card">
       <h3 id="shortcutsTitle" data-i18n="shortcutsTitle">Keyboard shortcuts</h3>
       <dl>
-        <dt>1–6</dt><dd data-i18n="shortcutTabs">Switch tabs</dd>
+        <dt>1–7</dt><dd data-i18n="shortcutTabs">Switch tabs</dd>
         <dt>Esc</dt><dd data-i18n="shortcutEscape">Cancel edit</dd>
         <dt>?</dt><dd data-i18n="shortcutHelp">Show this help</dd>
       </dl>
@@ -1119,7 +1119,7 @@
         cacheSize: "Cache size",
         reloadingCache: "Clearing cache and reloading…",
         shortcutsTitle: "Keyboard shortcuts",
-        shortcutTabs: "1–6 — Switch tabs",
+        shortcutTabs: "1–7 — Switch tabs",
         shortcutEscape: "Esc — Cancel edit",
         shortcutHelp: "? — Show this help",
         closeBtn: "Close",
@@ -1537,7 +1537,7 @@
         cacheSize: "Tamaño del caché",
         reloadingCache: "Limpiando caché y recargando…",
         shortcutsTitle: "Atajos de teclado",
-        shortcutTabs: "1–6 — Cambiar pestañas",
+        shortcutTabs: "1–7 — Cambiar pestañas",
         shortcutEscape: "Esc — Cancelar edición",
         shortcutHelp: "? — Mostrar esta ayuda",
         closeBtn: "Cerrar",
@@ -1760,11 +1760,15 @@
         this.dbName = dbName;
       }
       async open(stores) {
-        return new Promise((resolve, reject) => {
+        // Cache the opened DB promise — otherwise every getAll/add/put/delete
+        // reopens a handle, leaking on long sessions and making import /
+        // cascade-delete O(N) transactions instead of reusing one.
+        if (this._dbp) return this._dbp;
+        this._dbp = new Promise((resolve, reject) => {
           const request = indexedDB.open(this.dbName, DB_VERSION);
           request.onupgradeneeded = (e) => {
             const db = e.target.result;
-            stores.forEach(store => {
+            (stores || []).forEach(store => {
               if (!db.objectStoreNames.contains(store.name)) {
                 const os = db.createObjectStore(store.name, { keyPath: store.keyPath });
                 store.indexes.forEach(idx => os.createIndex(idx.name, idx.keyPath));
@@ -1774,6 +1778,7 @@
           request.onsuccess = () => resolve(request.result);
           request.onerror = () => reject(request.error);
         });
+        return this._dbp;
       }
       async getAll(storeName) {
         const db = await this.open([]);
@@ -2489,15 +2494,44 @@
       document.getElementById('eSevereService').checked = !!vehicle.severeService;
     }
 
+    // Downscale + re-encode photos before we store them. Modern phone cameras
+    // produce 3–8 MB files; stored raw in IndexedDB as data URLs, 20 receipts
+    // would blow past the per-origin quota and bloat exports. 1280 px on the
+    // long edge is still readable for a receipt; JPEG q=0.82 is a sweet spot
+    // for size vs. legibility. Falls back to the original file for formats
+    // createImageBitmap can't decode (rare on web inputs — iOS transcodes HEIC
+    // at upload, and desktop generally hands us JPEG/PNG).
+    async function compressImage(file, maxDim = 1280, quality = 0.82) {
+      try {
+        const bmp = await createImageBitmap(file);
+        const scale = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+        const w = Math.round(bmp.width * scale);
+        const h = Math.round(bmp.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(bmp, 0, 0, w, h);
+        bmp.close?.();
+        return canvas.toDataURL('image/jpeg', quality);
+      } catch {
+        return new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result);
+          r.onerror = () => reject(r.error);
+          r.readAsDataURL(file);
+        });
+      }
+    }
+
     // Maintenance receipt photo
     let maintPhotoDataUrl = null;
-    document.getElementById('mPhotoFile').addEventListener('change', (e) => {
+    document.getElementById('mPhotoFile').addEventListener('change', async (e) => {
       const file = e.target.files[0];
       const preview = document.getElementById('mPhotoPreview');
       if (!file) { maintPhotoDataUrl = null; preview.classList.add('hidden'); preview.removeAttribute('src'); return; }
-      const reader = new FileReader();
-      reader.onload = (ev) => { maintPhotoDataUrl = ev.target.result; preview.src = maintPhotoDataUrl; preview.classList.remove('hidden'); };
-      reader.readAsDataURL(file);
+      maintPhotoDataUrl = await compressImage(file);
+      preview.src = maintPhotoDataUrl;
+      preview.classList.remove('hidden');
     });
 
     // Service reminders snooze/dismiss
@@ -2725,7 +2759,7 @@
       await loadMaintenance();
       await loadDashboard();
       e.target.reset();
-      document.getElementById('mOtherType').classList.add('hidden');
+      document.getElementById('mType').dispatchEvent(new Event('change'));
       document.getElementById('mDate').focus();
     });
 
@@ -2782,12 +2816,12 @@
         if (known) {
           document.getElementById('mType').value = m.type;
           document.getElementById('mOtherType').value = '';
-          document.getElementById('mOtherType').classList.add('hidden');
         } else {
           document.getElementById('mType').value = 'Other';
           document.getElementById('mOtherType').value = m.type;
-          document.getElementById('mOtherType').classList.remove('hidden');
         }
+        // Fire change so the Other-input visibility + required stay in sync.
+        document.getElementById('mType').dispatchEvent(new Event('change'));
         document.getElementById('mShop').checked = !!m.shop;
         document.getElementById('mCost').value = m.cost || '';
         document.getElementById('mNotes').value = m.notes || '';
@@ -2811,9 +2845,14 @@
       }
     });
 
-    // mType -> show/hide Other input
+    // mType -> show/hide Other input; also toggle required so form validation
+    // catches an empty free-text "Other" before it saves as `type: ""` (which
+    // renders as a blank row and escapes maintTypeCategory bucketing).
     document.getElementById('mType').addEventListener('change', (e) => {
-      document.getElementById('mOtherType').classList.toggle('hidden', e.target.value !== 'Other');
+      const isOther = e.target.value === 'Other';
+      const otherInput = document.getElementById('mOtherType');
+      otherInput.classList.toggle('hidden', !isOther);
+      otherInput.required = isOther;
     });
 
     // Fuel
@@ -3240,9 +3279,9 @@
       renderParts(items);
     });
 
-    // Mods — read photo as data URL
+    // Mods photo — compressed via compressImage() (see maintenance section).
     let modPhotoDataUrl = null;
-    document.getElementById('modPhotoFile').addEventListener('change', (e) => {
+    document.getElementById('modPhotoFile').addEventListener('change', async (e) => {
       const file = e.target.files[0];
       const preview = document.getElementById('modPhotoPreview');
       if (!file) {
@@ -3251,13 +3290,9 @@
         preview.removeAttribute('src');
         return;
       }
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        modPhotoDataUrl = ev.target.result;
-        preview.src = modPhotoDataUrl;
-        preview.classList.remove('hidden');
-      };
-      reader.readAsDataURL(file);
+      modPhotoDataUrl = await compressImage(file);
+      preview.src = modPhotoDataUrl;
+      preview.classList.remove('hidden');
     });
 
     // modInstalled toggle shows/hides Removed-on date + Reason-for-removal textarea.
@@ -4338,6 +4373,13 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
         if (editState.fuel) { document.getElementById('fuelForm').reset(); exitFuelEdit(); }
         if (editState.mods) { document.getElementById('modsForm').reset(); exitModsEdit(); }
         if (editState.parts) { document.getElementById('partsForm').reset(); exitPartsEdit(); }
+        if (editState.trails) {
+          document.getElementById('trailsForm').reset();
+          setTrailConditions([]);
+          document.getElementById('trailWaterDepthWrap').classList.add('hidden');
+          document.getElementById('trailDamageNotes').classList.add('hidden');
+          exitTrailsEdit();
+        }
       }
     });
 
