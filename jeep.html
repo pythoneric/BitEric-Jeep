@@ -426,6 +426,8 @@
             </optgroup>
             <optgroup data-i18n-label="typeGroupOffroad" label="Drivetrain / Offroad">
               <option value="Wheel bearing service" data-i18n="wheelBearing">Wheel bearing service</option>
+              <option value="Wheel bearing inspect" data-i18n="wheelBearingInspect">Wheel bearing inspect</option>
+              <option value="Undercarriage rinse" data-i18n="undercarriageRinse">Undercarriage rinse</option>
               <option value="U-joints grease" data-i18n="uJointsGrease">U-joints (grease)</option>
               <option value="U-joints replace" data-i18n="uJointsReplace">U-joints (replace)</option>
               <option value="Ball joints" data-i18n="ballJoints">Ball joints</option>
@@ -599,16 +601,27 @@
         <form id="trailsForm">
           <input type="date" id="trailDate" required>
           <input type="text" id="trailName" data-i18n-placeholder="trailName" placeholder="Trail name" required>
-          <input type="number" step="0.1" id="trailDuration" data-i18n-placeholder="trailDuration" placeholder="Duration (hours)">
+          <input type="number" id="trailOdometer" min="0" required data-i18n-placeholder="trailOdometerLabel" placeholder="Odometer at start (mi)">
+          <input type="number" step="0.1" id="trailDuration" min="0" data-i18n-placeholder="trailDuration" placeholder="Duration (hours)">
           <fieldset class="trail-conditions">
             <legend data-i18n="trailConditions">Trail conditions (check all that apply)</legend>
             <label><input type="checkbox" id="trailWater" value="water"> <span data-i18n="trailWater">💧 Water crossing</span></label>
+            <label id="trailWaterDepthWrap" class="hidden">
+              <span data-i18n="trailWaterDepth">Water depth</span>:
+              <select id="trailWaterDepth">
+                <option value="shallow" data-i18n="trailWaterDepthShallow">Shallow (ankle / knee)</option>
+                <option value="deep" data-i18n="trailWaterDepthDeep">Deep (axles submerged)</option>
+              </select>
+            </label>
             <label><input type="checkbox" id="trailMud" value="mud"> <span data-i18n="trailMud">🟤 Mud</span></label>
             <label><input type="checkbox" id="trailRock" value="rock"> <span data-i18n="trailRock">🪨 Rock crawling</span></label>
             <label><input type="checkbox" id="trailSand" value="sand"> <span data-i18n="trailSand">🏜️ Sand / dust</span></label>
             <label><input type="checkbox" id="trailSnow" value="snow"> <span data-i18n="trailSnow">❄️ Snow / ice</span></label>
             <label><input type="checkbox" id="trailHeavy" value="heavy"> <span data-i18n="trailHeavy">⚠️ Heavy low-range / crawl</span></label>
           </fieldset>
+          <input type="number" id="trailAiredDownPsi" min="0" max="60" data-i18n-placeholder="trailAiredDownPsi" placeholder="Aired down to (psi, optional)">
+          <label><input type="checkbox" id="trailDamage"> <span data-i18n="trailDamage">Damage occurred on this run</span></label>
+          <textarea id="trailDamageNotes" class="hidden" data-i18n-placeholder="trailDamageNotesPh" placeholder="e.g. sheared u-joint, bent tie rod, cracked skid"></textarea>
           <textarea id="trailNotes" data-i18n-placeholder="trailNotes" placeholder="Notes — obstacles, damage, companions"></textarea>
           <p class="trail-hint" data-i18n="trailHint">Water crossings auto-schedule a differential + transfer-case fluid check.</p>
           <button type="submit" class="btn" data-i18n="addTrail">Log Trail Run</button>
@@ -1164,6 +1177,18 @@
         noTrailsMatch: "No trails match your search.",
         trailsAutoReminder: "Auto-scheduled: diff + transfer case fluid check",
         trailsAutoTireReminder: "Auto-scheduled: wheel re-torque + lug nut check",
+        trailOdometerLabel: "Odometer at start (mi)",
+        trailWaterDepth: "Water depth",
+        trailWaterDepthShallow: "Shallow (ankle / knee)",
+        trailWaterDepthDeep: "Deep (axles submerged)",
+        trailAiredDownPsi: "Aired down to (psi, optional)",
+        trailDamage: "Damage occurred on this run",
+        trailDamageNotes: "Damage notes",
+        trailDamageNotesPh: "e.g. sheared u-joint, bent tie rod, cracked skid",
+        trailDuplicateWarn: "A trail with that name is already logged on that date. Add anyway?",
+        trailLoggedToast: "Trail logged",
+        wheelBearingInspect: "Wheel bearing inspect",
+        undercarriageRinse: "Undercarriage rinse",
         maintPerMile: "Maintenance $/mi",
         fuelPerMile: "Fuel $/mi",
         phOdometerMi: "Odometer (mi)",
@@ -1536,6 +1561,18 @@
         noTrailsMatch: "Sin rutas que coincidan.",
         trailsAutoReminder: "Agendado: revisar diferenciales + caja transfer",
         trailsAutoTireReminder: "Agendado: re-torque de ruedas + tuercas",
+        trailOdometerLabel: "Odómetro al inicio (mi)",
+        trailWaterDepth: "Profundidad del agua",
+        trailWaterDepthShallow: "Poca (tobillo / rodilla)",
+        trailWaterDepthDeep: "Profunda (ejes sumergidos)",
+        trailAiredDownPsi: "Desinflado a (psi, opcional)",
+        trailDamage: "Hubo daños en esta ruta",
+        trailDamageNotes: "Notas del daño",
+        trailDamageNotesPh: "ej. cruceta, tie rod doblado, protector roto",
+        trailDuplicateWarn: "Ya hay una ruta con ese nombre en esa fecha. ¿Agregar?",
+        trailLoggedToast: "Ruta registrada",
+        wheelBearingInspect: "Inspección de rodamientos",
+        undercarriageRinse: "Lavado de bajos",
         maintPerMile: "Mantenimiento $/mi",
         fuelPerMile: "Combustible $/mi",
         partsInventory: "Inventario de piezas",
@@ -1853,7 +1890,7 @@
       toastTimeoutId = setTimeout(hideToast, ms);
     }
     // Edit-mode tracking per form
-    const editState = { maintenance: null, fuel: null, mods: null, parts: null, trails: null };
+    const editState = { maintenance: null, fuel: null, mods: null, parts: null, trails: null, trailsCreatedAt: null };
     function setEditBanner(formEl, labelText, onCancel) {
       let banner = formEl.querySelector('.edit-banner');
       if (!labelText) {
@@ -2379,20 +2416,27 @@
       document.getElementById('mDate').focus();
     });
 
-    async function spawnFollowUp({ type, miles }, currentOdo, serviceDate) {
+    async function spawnFollowUp({ type, miles, days }, currentOdo, serviceDate) {
+      const parentDate = serviceDate || new Date().toISOString().split('T')[0];
+      let nextDueDate = null;
+      if (days) {
+        const d = new Date(parentDate);
+        d.setDate(d.getDate() + days);
+        nextDueDate = d.toISOString().split('T')[0];
+      }
       await db.add('maintenance', {
         id: crypto.randomUUID(),
         vehicleId: activeVehicleId,
-        date: serviceDate || new Date().toISOString().split('T')[0],
+        date: parentDate,
         odometer: currentOdo,
         type: type,
         shop: false,
         cost: 0,
         notes: t('followUpAutoNote'),
-        intervalMiles: miles,
+        intervalMiles: miles || null,
         intervalMonths: null,
-        nextDueMiles: currentOdo + miles,
-        nextDueDate: null,
+        nextDueMiles: miles ? (currentOdo || 0) + miles : null,
+        nextDueDate: nextDueDate,
         reminderShown: false,
         reminderDismissed: false,
         photo: null,
@@ -3164,56 +3208,111 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
       });
     }
 
-    async function maybeSpawnTrailFollowUps(conditions, odo) {
+    // Spawn maintenance follow-ups based on trail conditions.
+    //   - Water crossing + "deep" depth = diff (front + rear) + transfer case
+    //     fluid check + wheel bearing inspect. Shallow water doesn't trip it —
+    //     ankle-deep puddles don't push water past the axle breathers.
+    //   - Rock / heavy crawl = post-crawl inspection (u-joints / tie rods / skids).
+    //   - Mud or sand / dust = air filter check (sand is actually harsher).
+    //   - Snow / ice = undercarriage rinse within a week (frame-rust driver).
+    //   - Any trail run = universal undercarriage rinse at +7 days (belt-and-suspenders).
+    async function maybeSpawnTrailFollowUps(conditions, waterDepth, odo, date) {
       if (!activeVehicleId) return;
-      if (conditions.includes('water')) {
-        await spawnFollowUp({ type: 'Differential fluid front', miles: 50, note: 'Auto-scheduled after water crossing' }, odo);
-        await spawnFollowUp({ type: 'Differential fluid rear', miles: 50, note: 'Auto-scheduled after water crossing' }, odo);
-        await spawnFollowUp({ type: 'Transfer case fluid', miles: 50, note: 'Auto-scheduled after water crossing' }, odo);
-        await spawnFollowUp({ type: 'Wheel bearing service', miles: 100, note: 'Check after water crossing' }, odo);
+      if (conditions.includes('water') && waterDepth === 'deep') {
+        await spawnFollowUp({ type: 'Differential fluid front', miles: 50 }, odo, date);
+        await spawnFollowUp({ type: 'Differential fluid rear', miles: 50 }, odo, date);
+        await spawnFollowUp({ type: 'Transfer case fluid', miles: 50 }, odo, date);
+        await spawnFollowUp({ type: 'Wheel bearing inspect', miles: 100 }, odo, date);
       }
       if (conditions.includes('rock') || conditions.includes('heavy')) {
-        await spawnFollowUp({ type: 'Inspection', miles: 50, note: 'Post-crawl inspection: u-joints, tie rods, skid plates' }, odo);
+        await spawnFollowUp({ type: 'Inspection', miles: 50 }, odo, date);
       }
-      if (conditions.includes('mud')) {
-        await spawnFollowUp({ type: 'Air filter', miles: 100, note: 'Check after mud run' }, odo);
+      if (conditions.includes('mud') || conditions.includes('sand')) {
+        await spawnFollowUp({ type: 'Air filter', miles: 100 }, odo, date);
       }
+      if (conditions.includes('snow')) {
+        await spawnFollowUp({ type: 'Undercarriage rinse', days: 7 }, odo, date);
+      }
+      // Universal undercarriage rinse — any condition selected, we rinse.
+      // (Skipped when no conditions are set: that's a dirt-road commute, not a trail.)
+      if (conditions.length && !conditions.includes('snow')) {
+        await spawnFollowUp({ type: 'Undercarriage rinse', days: 7 }, odo, date);
+      }
+    }
+
+    // Water-depth select only makes sense when the water checkbox is checked.
+    document.getElementById('trailWater').addEventListener('change', (e) => {
+      document.getElementById('trailWaterDepthWrap').classList.toggle('hidden', !e.target.checked);
+    });
+    // Damage notes textarea only appears once the user ticks "Damage occurred".
+    document.getElementById('trailDamage').addEventListener('change', (e) => {
+      document.getElementById('trailDamageNotes').classList.toggle('hidden', !e.target.checked);
+    });
+
+    function applyTrailMaxDate() {
+      document.getElementById('trailDate').max = todayIsoLocal();
     }
 
     document.getElementById('trailsForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!activeVehicleId) return;
       const conditions = readTrailConditions();
+      const waterChecked = document.getElementById('trailWater').checked;
+      const waterDepth = waterChecked ? document.getElementById('trailWaterDepth').value : null;
+      const odometer = +document.getElementById('trailOdometer').value;
+      const date = document.getElementById('trailDate').value;
+      const name = document.getElementById('trailName').value;
+
+      // Duplicate detection — same vehicle, same date, same trail name
+      // (case-insensitive). Edits bypass.
+      if (!editState.trails) {
+        const all = await db.getAll('trails');
+        const norm = s => (s || '').trim().toLowerCase();
+        const dup = all.some(x => x.vehicleId === activeVehicleId && x.date === date && norm(x.name) === norm(name));
+        if (dup && !confirm(t('trailDuplicateWarn'))) return;
+      }
+
+      const damage = document.getElementById('trailDamage').checked;
       const data = {
         id: editState.trails || crypto.randomUUID(),
         vehicleId: activeVehicleId,
-        date: document.getElementById('trailDate').value,
-        name: document.getElementById('trailName').value,
+        date: date,
+        name: name,
+        odometer: odometer,
         durationHours: +document.getElementById('trailDuration').value || null,
         conditions,
+        waterDepth,
+        airedDownPsi: +document.getElementById('trailAiredDownPsi').value || null,
+        damage: damage,
+        damageNotes: damage ? (document.getElementById('trailDamageNotes').value || null) : null,
         notes: document.getElementById('trailNotes').value,
-        createdAt: new Date()
+        createdAt: editState.trailsCreatedAt || new Date()
       };
       if (editState.trails) {
         await db.put('trails', data);
         exitTrailsEdit();
       } else {
         await db.add('trails', data);
-        const veh = (await db.getAll('vehicles')).find(v => v.id === activeVehicleId);
-        const anchorOdo = veh?.odometer || 0;
-        await maybeSpawnTrailFollowUps(conditions, anchorOdo);
-        if (conditions.length) {
-          showToast(conditions.includes('water') ? t('trailsAutoReminder') : t('importSuccess'));
-        }
+        await maybeSpawnTrailFollowUps(conditions, waterDepth, odometer, date);
+        const toastMsg = (conditions.includes('water') && waterDepth === 'deep')
+          ? t('trailsAutoReminder')
+          : t('trailLoggedToast');
+        showToast(toastMsg);
       }
+      await bumpVehicleOdometer(odometer);
       await loadTrails();
       await loadDashboard();
       e.target.reset();
+      document.getElementById('trailWaterDepthWrap').classList.add('hidden');
+      document.getElementById('trailDamageNotes').classList.add('hidden');
+      applyTrailMaxDate();
+      document.getElementById('trailDate').value = todayIsoLocal();
       document.getElementById('trailName').focus();
     });
 
     function exitTrailsEdit() {
       editState.trails = null;
+      editState.trailsCreatedAt = null;
       setEditBanner(document.getElementById('trailsForm'), '', null);
       document.querySelector('#trailsForm button[type="submit"]').textContent = t('addTrail');
     }
@@ -3221,6 +3320,11 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
     async function loadTrails() {
       const items = (await db.getAll('trails')).filter(x => x.vehicleId === activeVehicleId).sort((a, b) => new Date(b.date) - new Date(a.date));
       renderTrails(items);
+      applyTrailMaxDate();
+      // Auto-fill today's date on tab open (but not during edit, and don't
+      // overwrite a value the user just typed).
+      const dateEl = document.getElementById('trailDate');
+      if (!editState.trails && !dateEl.value) dateEl.value = todayIsoLocal();
     }
 
     function renderTrails(items) {
@@ -3232,7 +3336,7 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
       }
       const query = (document.getElementById('trailsSearch')?.value || '').toLowerCase().trim();
       const filtered = query
-        ? items.filter(x => [x.name, x.date, x.notes, (x.conditions || []).join(' ')].some(v => String(v || '').toLowerCase().includes(query)))
+        ? items.filter(x => [x.name, x.date, x.notes, x.damageNotes, x.waterDepth, x.durationHours, (x.conditions || []).join(' ')].some(v => String(v || '').toLowerCase().includes(query)))
         : items;
       if (!filtered.length) {
         list.innerHTML = `<li class="empty-state">${t('noTrailsMatch')}</li>`;
@@ -3241,9 +3345,13 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
       list.innerHTML = filtered.map(x => {
         const chips = (x.conditions || []).map(c => `<span class="trail-condition-chip">${escHtml(c)}</span>`).join('');
         const dur = x.durationHours ? ` · ${x.durationHours}h` : '';
+        const odo = x.odometer ? ` · ${escHtml(x.odometer)} mi` : '';
+        const psi = x.airedDownPsi ? ` · ${escHtml(x.airedDownPsi)} psi` : '';
+        const depth = x.waterDepth ? ` · ${escHtml(x.waterDepth)} H₂O` : '';
         const notes = x.notes ? ` · ${escHtml(x.notes)}` : '';
+        const damageBit = x.damage ? ` <span class="trail-condition-chip" style="background:#dc2626;color:white;">⚠️${x.damageNotes ? ' ' + escHtml(x.damageNotes) : ''}</span>` : '';
         return `<li>
-          <span class="entry-main">${escHtml(x.date)} · ${escHtml(x.name)}${dur} ${chips}${notes}</span>
+          <span class="entry-main">${escHtml(x.date)} · ${escHtml(x.name)}${odo}${dur}${psi}${depth} ${chips}${damageBit}${notes}</span>
           ${rowActions(x.id)}
         </li>`;
       }).join('');
@@ -3266,13 +3374,29 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
         const x = items.find(i => i.id === editEl.dataset.id);
         if (!x) return;
         editState.trails = x.id;
+        editState.trailsCreatedAt = x.createdAt || null;
         document.getElementById('trailDate').value = x.date || '';
         document.getElementById('trailName').value = x.name || '';
+        document.getElementById('trailOdometer').value = x.odometer || '';
         document.getElementById('trailDuration').value = x.durationHours || '';
+        document.getElementById('trailAiredDownPsi').value = x.airedDownPsi || '';
         document.getElementById('trailNotes').value = x.notes || '';
         setTrailConditions(x.conditions);
+        // Water-depth select is only meaningful when the water box is checked.
+        const waterChecked = !!document.getElementById('trailWater').checked;
+        document.getElementById('trailWaterDepthWrap').classList.toggle('hidden', !waterChecked);
+        if (x.waterDepth) document.getElementById('trailWaterDepth').value = x.waterDepth;
+        document.getElementById('trailDamage').checked = !!x.damage;
+        document.getElementById('trailDamageNotes').classList.toggle('hidden', !x.damage);
+        document.getElementById('trailDamageNotes').value = x.damageNotes || '';
         const form = document.getElementById('trailsForm');
-        setEditBanner(form, `${t('editingEntry')} ${x.name}`, () => { form.reset(); setTrailConditions([]); exitTrailsEdit(); });
+        setEditBanner(form, `${t('editingEntry')} ${x.name}`, () => {
+          form.reset();
+          setTrailConditions([]);
+          document.getElementById('trailWaterDepthWrap').classList.add('hidden');
+          document.getElementById('trailDamageNotes').classList.add('hidden');
+          exitTrailsEdit();
+        });
         form.querySelector('button[type="submit"]').textContent = t('updateEntry');
         form.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
@@ -3934,10 +4058,10 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
       ];
       for (const entry of demoParts) await db.add('parts', entry);
       const demoTrails = [
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-09-22', name: 'Rubicon Trail — Loon Lake to Rubicon Springs', durationHours: 8, conditions: ['rock', 'heavy'], notes: 'Full-day granite crawl. Aired down to 15 psi. Used sway bar disconnect.', createdAt: new Date() },
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-11-04', name: 'Moab — Hell\'s Revenge', durationHours: 5, conditions: ['rock'], notes: 'Slickrock fins. Rear locker engaged twice.', createdAt: new Date() },
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-03-16', name: 'Ocala National Forest run', durationHours: 4, conditions: ['water', 'mud'], notes: 'Deep water crossing at Juniper. Checked diffs afterward.', createdAt: new Date() },
-        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-06-22', name: 'Black Bear Pass — Telluride', durationHours: 3, conditions: ['heavy'], notes: 'Shelf road down to Telluride. Brake temps monitored.', createdAt: new Date() }
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-09-22', odometer: 10700, name: 'Rubicon Trail — Loon Lake to Rubicon Springs', durationHours: 8, airedDownPsi: 15, conditions: ['rock', 'heavy'], waterDepth: null, damage: false, damageNotes: null, notes: 'Full-day granite crawl. Aired down to 15 psi. Used sway bar disconnect.', createdAt: new Date() },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2023-11-04', odometer: 11500, name: 'Moab — Hell\'s Revenge', durationHours: 5, airedDownPsi: 18, conditions: ['rock'], waterDepth: null, damage: false, damageNotes: null, notes: 'Slickrock fins. Rear locker engaged twice.', createdAt: new Date() },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-03-16', odometer: 13500, name: 'Ocala National Forest run', durationHours: 4, airedDownPsi: 20, conditions: ['water', 'mud'], waterDepth: 'deep', damage: false, damageNotes: null, notes: 'Deep water crossing at Juniper. Checked diffs afterward.', createdAt: new Date() },
+        { id: crypto.randomUUID(), vehicleId: demoVehicle.id, date: '2024-06-22', odometer: 15200, name: 'Black Bear Pass — Telluride', durationHours: 3, airedDownPsi: 20, conditions: ['heavy'], waterDepth: null, damage: false, damageNotes: null, notes: 'Shelf road down to Telluride. Brake temps monitored.', createdAt: new Date() }
       ];
       for (const entry of demoTrails) await db.add('trails', entry);
     }
