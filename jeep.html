@@ -344,7 +344,7 @@
         </div>
         <div class="card">
           <h3 data-i18n="costBreakdown">Cost Breakdown</h3>
-          <canvas id="costChart" class="chart"></canvas>
+          <canvas id="costChart" class="chart" role="img" aria-label="Cost breakdown pie chart"></canvas>
         </div>
       </div>
       <div class="card">
@@ -363,16 +363,16 @@
       </div>
       <div class="card">
         <h3 data-i18n="monthlyTrend">Monthly spend (last 12 months)</h3>
-        <canvas id="monthlyChart" class="chart"></canvas>
+        <canvas id="monthlyChart" class="chart" role="img" aria-label="Monthly spend stacked bar chart"></canvas>
       </div>
       <div class="g2">
         <div class="card">
           <h3 data-i18n="cardMileage">Miles driven</h3>
-          <canvas id="mileageChart" class="chart"></canvas>
+          <canvas id="mileageChart" class="chart" role="img" aria-label="Miles driven over time"></canvas>
         </div>
         <div class="card">
           <h3 data-i18n="cardMaintByType">Maintenance by type</h3>
-          <canvas id="maintCategoryChart" class="chart"></canvas>
+          <canvas id="maintCategoryChart" class="chart" role="img" aria-label="Maintenance spend by category"></canvas>
         </div>
       </div>
     </div>
@@ -503,7 +503,7 @@
         </div>
         <div class="card" style="margin-top: 1rem;">
           <h3 data-i18n="cardReminderStatus">Reminder status</h3>
-          <canvas id="maintReminderStatusChart" class="chart"></canvas>
+          <canvas id="maintReminderStatusChart" class="chart" role="img" aria-label="Reminder status breakdown"></canvas>
         </div>
         <h3 data-i18n="maintenanceHistory">Maintenance History</h3>
         <input type="search" id="maintenanceSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…">
@@ -542,16 +542,16 @@
         <div class="g2">
           <div>
             <h3 data-i18n="mpgChart">MPG Over Time</h3>
-            <canvas id="mpgChart" class="chart"></canvas>
+            <canvas id="mpgChart" class="chart" role="img" aria-label="MPG over time"></canvas>
           </div>
           <div>
             <h3 data-i18n="priceChart">$/Gallon Over Time</h3>
-            <canvas id="priceChart" class="chart"></canvas>
+            <canvas id="priceChart" class="chart" role="img" aria-label="Fuel price per gallon over time"></canvas>
           </div>
         </div>
         <div class="card" style="margin-top: 1rem;">
           <h3 data-i18n="cardMpgByCondition">MPG by driving condition</h3>
-          <canvas id="mpgByConditionChart" class="chart"></canvas>
+          <canvas id="mpgByConditionChart" class="chart" role="img" aria-label="MPG by driving condition"></canvas>
         </div>
         <div id="fuelStats"></div>
         <input type="search" id="fuelSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…">
@@ -612,7 +612,7 @@
         </form>
         <div class="card" style="margin-top: 1rem;">
           <h3 data-i18n="cardModsByCategory">Mods spend by category</h3>
-          <canvas id="modsCategoryChart" class="chart"></canvas>
+          <canvas id="modsCategoryChart" class="chart" role="img" aria-label="Modifications spend by category"></canvas>
         </div>
         <input type="search" id="modsSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…">
         <div id="modsList"></div>
@@ -651,7 +651,7 @@
         </form>
         <div class="card" style="margin-top: 1rem;">
           <h3 data-i18n="cardTrailsByCondition">Trail conditions logged</h3>
-          <canvas id="trailsConditionChart" class="chart"></canvas>
+          <canvas id="trailsConditionChart" class="chart" role="img" aria-label="Trail condition frequency"></canvas>
         </div>
         <input type="search" id="trailsSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…">
         <ul id="trailsList"></ul>
@@ -682,7 +682,7 @@
         </form>
         <div class="card" style="margin-top: 1rem;">
           <h3 data-i18n="cardPartsValue">Inventory value by category</h3>
-          <canvas id="partsInventoryChart" class="chart"></canvas>
+          <canvas id="partsInventoryChart" class="chart" role="img" aria-label="Parts inventory value by category"></canvas>
         </div>
         <input type="search" id="partsSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…">
         <div id="partsList"></div>
@@ -2091,6 +2091,48 @@
     let partsInventoryChartInstance = null;
     let maintReminderStatusChartInstance = null;
 
+    // Unified chart palette. Three clusters:
+    //   * SEMANTIC — same color always means the same thing (maintenance=orange,
+    //     fuel=teal, mods=violet; good=green, warn=amber, over=red).
+    //   * CATEGORICAL — deterministic rotation for group-by-category charts.
+    //   * Tab-specific maps (trail conditions, driving conditions) pin each
+    //     bucket to a semantic-ish color for readability.
+    // The old palette had three overlapping yellows that were hard to tell
+    // apart; this fixes that by diversifying into teal + violet for the two
+    // non-maintenance pillars.
+    const CHART_COLORS = {
+      maintenance: '#d97706',
+      fuel:        '#0891b2',
+      mods:        '#7c3aed',
+      good:        '#22c55e',
+      warn:        '#f59e0b',
+      over:        '#dc2626',
+      neutral:     '#6b7280',
+      categorical: ['#d97706', '#0891b2', '#7c3aed', '#22c55e', '#e11d48', '#2563eb', '#ca8a04', '#6b7280'],
+      trailConditions: {
+        water: '#0891b2', mud: '#78350f', rock: '#6b7280',
+        sand:  '#ca8a04', snow: '#e5e7eb', heavy: '#dc2626',
+      },
+      drivingConditions: {
+        Highway: '#22c55e', Mixed: '#0891b2', City: '#f59e0b',
+        Offroad: '#d97706', Towing: '#7c3aed',
+      },
+    };
+
+    // Tooltip callback factory — renders Y values as currency amounts with the
+    // user's chosen symbol. Pass to options.plugins.tooltip.callbacks.label.
+    function currencyTooltipLabel(ctx) {
+      const v = ctx.parsed.y ?? ctx.parsed.x ?? ctx.parsed ?? 0;
+      return `${ctx.dataset.label || ''} ${currencySym()}${(+v).toFixed(2)}`.trim();
+    }
+
+    // Set Chart.js global defaults once. Slightly larger font makes the
+    // legends/axis labels legible on phones; no dependency bump.
+    if (window.Chart?.defaults) {
+      Chart.defaults.font.size = 13;
+      Chart.defaults.font.family = "'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+    }
+
     function estimateVehicleValue(vehicle) {
       if (vehicle.manualValue) return { value: vehicle.manualValue, manual: true };
       if (!vehicle.purchasePrice || !vehicle.purchaseDate) return null;
@@ -2316,20 +2358,27 @@
         data: {
           labels,
           datasets: [
-            { label: t('tcoMaintenance'), data: maintSeries, backgroundColor: '#d97706' },
-            { label: t('tcoFuel'), data: fuelSeries, backgroundColor: '#f59e0b' },
-            { label: t('tcoMods'), data: modsSeries, backgroundColor: '#fbbf24' }
+            { label: t('tcoMaintenance'), data: maintSeries, backgroundColor: CHART_COLORS.maintenance },
+            { label: t('tcoFuel'), data: fuelSeries, backgroundColor: CHART_COLORS.fuel },
+            { label: t('tcoMods'), data: modsSeries, backgroundColor: CHART_COLORS.mods }
           ]
         },
-        options: { responsive: true, scales: { x: { stacked: true }, y: { stacked: true } } }
+        options: {
+          responsive: true,
+          scales: { x: { stacked: true }, y: { stacked: true } },
+          plugins: { tooltip: { callbacks: { label: currencyTooltipLabel } } }
+        }
       });
       if (costChartInstance) costChartInstance.destroy();
       costChartInstance = new Chart(document.getElementById('costChart'), {
         type: 'pie',
         data: {
           labels: [t('tcoMaintenance'), t('tcoFuel'), t('tcoMods')],
-          datasets: [{ data: [maintCost, fuelCost, modCost], backgroundColor: ['#d97706', '#f59e0b', '#fbbf24'] }]
-        }
+          datasets: [{ data: [maintCost, fuelCost, modCost], backgroundColor: [CHART_COLORS.maintenance, CHART_COLORS.fuel, CHART_COLORS.mods] }]
+        },
+        options: { plugins: { tooltip: { callbacks: {
+          label: ctx => ` ${ctx.label}: ${currencySym()}${(+ctx.parsed).toFixed(2)}`
+        } } } }
       });
 
       // Mileage over time — odometer readings from fuel fills (most frequent
@@ -2342,7 +2391,7 @@
       if (mileageChartInstance) mileageChartInstance.destroy();
       mileageChartInstance = new Chart(document.getElementById('mileageChart'), {
         type: 'line',
-        data: { datasets: [{ label: t('cardMileage'), data: mileagePoints, borderColor: '#d97706', pointRadius: 2 }] },
+        data: { datasets: [{ label: t('cardMileage'), data: mileagePoints, borderColor: CHART_COLORS.maintenance, backgroundColor: CHART_COLORS.maintenance, pointRadius: 2, tension: 0.2 }] },
         options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time' } }, plugins: { legend: { display: false } } }
       });
 
@@ -2353,15 +2402,17 @@
         return acc;
       }, {});
       const MAINT_CAT_ORDER = ['Fluids', 'Brakes', 'Tires/Wheels', 'Drivetrain', 'Engine/Filters', 'Other'];
-      const MAINT_CAT_COLORS = ['#d97706', '#dc2626', '#f59e0b', '#ca8a04', '#fbbf24', '#9ca3af'];
       const catLabels = MAINT_CAT_ORDER.filter(c => byCat[c]).map(c => t(MAINT_CAT_I18N[c]));
       const catData = MAINT_CAT_ORDER.filter(c => byCat[c]).map(c => byCat[c]);
-      const catColors = MAINT_CAT_ORDER.map((c, i) => byCat[c] ? MAINT_CAT_COLORS[i] : null).filter(Boolean);
+      const catColors = MAINT_CAT_ORDER.filter(c => byCat[c]).map((_, i) => CHART_COLORS.categorical[i % CHART_COLORS.categorical.length]);
       if (maintCategoryChartInstance) maintCategoryChartInstance.destroy();
       maintCategoryChartInstance = new Chart(document.getElementById('maintCategoryChart'), {
         type: 'doughnut',
         data: { labels: catLabels, datasets: [{ data: catData, backgroundColor: catColors }] },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${currencySym()}${(+ctx.parsed).toFixed(2)}` } } }
+        }
       });
 
       // Populate Edit Vehicle form for active vehicle
@@ -2859,7 +2910,7 @@
       if (mpgChartInstance) mpgChartInstance.destroy();
       mpgChartInstance = new Chart(document.getElementById('mpgChart'), {
         type: 'line',
-        data: { datasets: [{ label: t('mpgChartLabel'), data: mpgData, borderColor: '#d97706' }] },
+        data: { datasets: [{ label: t('mpgChartLabel'), data: mpgData, borderColor: CHART_COLORS.fuel, backgroundColor: CHART_COLORS.fuel, tension: 0.2 }] },
         options: { scales: { x: { type: 'time' } } }
       });
       const priceData = fuel
@@ -2868,14 +2919,18 @@
       if (priceChartInstance) priceChartInstance.destroy();
       priceChartInstance = new Chart(document.getElementById('priceChart'), {
         type: 'line',
-        data: { datasets: [{ label: `${currencySym()}/gal`, data: priceData, borderColor: '#f59e0b' }] },
-        options: { scales: { x: { type: 'time' } } }
+        data: { datasets: [{ label: `${currencySym()}/gal`, data: priceData, borderColor: CHART_COLORS.warn, backgroundColor: CHART_COLORS.warn, tension: 0.2 }] },
+        options: {
+          scales: { x: { type: 'time' } },
+          plugins: { tooltip: { callbacks: {
+            label: ctx => ` ${currencySym()}${(+ctx.parsed.y).toFixed(3)}/gal`
+          } } }
+        }
       });
 
       // MPG averaged by driving condition — surfaces the Jeep-relevant
       // highway-vs-offroad MPG split we already collect on each fill.
       const CONDITION_ORDER = ['Highway', 'Mixed', 'City', 'Offroad', 'Towing'];
-      const CONDITION_COLORS = ['#22c55e', '#d97706', '#f59e0b', '#dc2626', '#7c3aed'];
       const byCondition = {};
       fuel.forEach(f => {
         if (f.mpg != null && f.drivingCondition) {
@@ -2887,12 +2942,19 @@
         const arr = byCondition[c];
         return arr.reduce((a, b) => a + b, 0) / arr.length;
       });
-      const condColors = CONDITION_ORDER.map((c, i) => byCondition[c] ? CONDITION_COLORS[i] : null).filter(Boolean);
+      const condColors = condLabels.map(c => CHART_COLORS.drivingConditions[c] || CHART_COLORS.neutral);
       if (mpgByConditionChartInstance) mpgByConditionChartInstance.destroy();
       mpgByConditionChartInstance = new Chart(document.getElementById('mpgByConditionChart'), {
         type: 'bar',
         data: { labels: condLabels, datasets: [{ label: t('mpgChartLabel'), data: condData, backgroundColor: condColors }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => ` ${(+ctx.parsed.y).toFixed(1)} MPG` } }
+          },
+          scales: { y: { beginAtZero: true } }
+        }
       });
 
       const mpgs = fuel.filter(f => f.mpg != null).map(f => f.mpg);
@@ -2972,7 +3034,7 @@
       });
       const labels = [t('overdue'), t('dueSoon'), t('reminderOnSchedule')];
       const data = [overdue, dueSoon, upcoming];
-      const colors = ['#dc2626', '#f59e0b', '#22c55e'];
+      const colors = [CHART_COLORS.over, CHART_COLORS.warn, CHART_COLORS.good];
       if (maintReminderStatusChartInstance) maintReminderStatusChartInstance.destroy();
       maintReminderStatusChartInstance = new Chart(document.getElementById('maintReminderStatusChart'), {
         type: 'doughnut',
@@ -3064,11 +3126,19 @@
       const entries = Object.entries(byCat).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
       const labels = entries.map(([k]) => k);
       const data = entries.map(([, v]) => v);
+      const barColors = labels.map((_, i) => CHART_COLORS.categorical[i % CHART_COLORS.categorical.length]);
       if (partsInventoryChartInstance) partsInventoryChartInstance.destroy();
       partsInventoryChartInstance = new Chart(document.getElementById('partsInventoryChart'), {
         type: 'bar',
-        data: { labels, datasets: [{ label: currencySym(), data, backgroundColor: '#f59e0b' }] },
-        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+        data: { labels, datasets: [{ label: currencySym(), data, backgroundColor: barColors }] },
+        options: {
+          indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => ` ${currencySym()}${(+ctx.parsed.x).toFixed(2)}` } }
+          },
+          scales: { x: { beginAtZero: true } }
+        }
       });
     }
 
@@ -3470,11 +3540,19 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
       const entries = Object.entries(byCat).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
       const labels = entries.map(([k]) => k);
       const data = entries.map(([, v]) => v);
+      const barColors = labels.map((_, i) => CHART_COLORS.categorical[i % CHART_COLORS.categorical.length]);
       if (modsCategoryChartInstance) modsCategoryChartInstance.destroy();
       modsCategoryChartInstance = new Chart(document.getElementById('modsCategoryChart'), {
         type: 'bar',
-        data: { labels, datasets: [{ label: currencySym(), data, backgroundColor: '#d97706' }] },
-        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+        data: { labels, datasets: [{ label: currencySym(), data, backgroundColor: barColors }] },
+        options: {
+          indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => ` ${currencySym()}${(+ctx.parsed.x).toFixed(2)}` } }
+          },
+          scales: { x: { beginAtZero: true } }
+        }
       });
     }
 
@@ -3704,14 +3782,13 @@ ${mods.map(m => `<tr><td>${esc(m.date)}</td><td>${esc(m.category)}</td><td>${esc
     // "how much of my offroad life is X-type terrain."
     function renderTrailsConditionChart(items) {
       const CONDITION_ORDER = ['water', 'mud', 'rock', 'sand', 'snow', 'heavy'];
-      const CONDITION_COLORS = ['#0ea5e9', '#78350f', '#9ca3af', '#f59e0b', '#e5e7eb', '#dc2626'];
       const counts = Object.fromEntries(CONDITION_ORDER.map(c => [c, 0]));
       items.forEach(x => (x.conditions || []).forEach(c => {
         if (counts[c] != null) counts[c]++;
       }));
       const labels = CONDITION_ORDER.filter(c => counts[c] > 0);
       const data = labels.map(c => counts[c]);
-      const colors = CONDITION_ORDER.map((c, i) => counts[c] > 0 ? CONDITION_COLORS[i] : null).filter(Boolean);
+      const colors = labels.map(c => CHART_COLORS.trailConditions[c] || CHART_COLORS.neutral);
       if (trailsConditionChartInstance) trailsConditionChartInstance.destroy();
       trailsConditionChartInstance = new Chart(document.getElementById('trailsConditionChart'), {
         type: 'doughnut',

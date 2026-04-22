@@ -132,3 +132,58 @@ test('Maintenance: reminder status donut shows three buckets', async ({ page }) 
   expect(info?.type).toBe('doughnut');
   expect(info?.labels?.length).toBe(3); // Overdue / Due soon / On schedule
 });
+
+// --- Color unification ---
+
+test('TCO trio uses three distinct colors (no yellow collision)', async ({ page }) => {
+  await loadDemoTruck(page);
+  await switchTab(page, 'dashboard');
+  // Cost breakdown pie: maintenance / fuel / mods should each get their own
+  // semantic color. Regression guard — the old palette had three near-identical
+  // yellows (#d97706 / #f59e0b / #fbbf24) that were hard to tell apart.
+  const colors = await page.evaluate(() => {
+    const ch = window.Chart?.getChart?.(document.getElementById('costChart'));
+    return ch?.data?.datasets?.[0]?.backgroundColor || null;
+  });
+  expect(colors).toHaveLength(3);
+  expect(new Set(colors).size).toBe(3);
+  // Maintenance keeps the brand orange; fuel and mods must NOT be yellow.
+  expect(colors[0].toLowerCase()).toBe('#d97706');
+  expect(colors[1].toLowerCase()).not.toMatch(/^#(f59e0b|fbbf24|fde047|facc15)$/);
+  expect(colors[2].toLowerCase()).not.toMatch(/^#(f59e0b|fbbf24|fde047|facc15)$/);
+});
+
+test('all chart canvases carry an aria-label for screen readers', async ({ page }) => {
+  await loadDemoTruck(page);
+  const canvases = [
+    'costChart', 'monthlyChart', 'mileageChart', 'maintCategoryChart',
+    'maintReminderStatusChart', 'mpgChart', 'priceChart', 'mpgByConditionChart',
+    'modsCategoryChart', 'trailsConditionChart', 'partsInventoryChart',
+  ];
+  for (const id of canvases) {
+    const label = await page.locator(`#${id}`).getAttribute('aria-label');
+    expect(label, `${id} should have aria-label`).toBeTruthy();
+  }
+});
+
+test('money chart tooltip prepends the currency symbol', async ({ page }) => {
+  await startFresh(page, { currency: 'DOP' });
+  // Seed enough data for TCO pie to render with non-zero slices.
+  await switchTab(page, 'maintenance');
+  await page.fill('#mDate', '2024-06-01');
+  await page.fill('#mOdometer', '15000');
+  await page.selectOption('#mType', 'Oil change');
+  await page.fill('#mCost', '3500');
+  await page.click('#maintenanceForm button[type="submit"]');
+  await switchTab(page, 'dashboard');
+  // Invoke the tooltip label callback directly on the cost pie chart.
+  const rendered = await page.evaluate(() => {
+    const ch = window.Chart?.getChart?.(document.getElementById('costChart'));
+    const cb = ch?.options?.plugins?.tooltip?.callbacks?.label;
+    if (!cb) return null;
+    // Simulate a tooltip context with 3500 as the value of the first slice.
+    return cb({ label: 'Maintenance', parsed: 3500 });
+  });
+  expect(rendered).toContain('RD$');
+  expect(rendered).toContain('3500.00');
+});
