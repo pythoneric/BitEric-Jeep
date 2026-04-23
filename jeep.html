@@ -20,14 +20,22 @@
       --bg: #0b0f14;
       --card: #141a23;
       --text: #e5e7eb;
+      --muted: #9ca3af;         /* dark-theme secondary text, tuned >7:1 on card */
       --accent: #d97706;
       --border: #374151;
       --light-bg: #f9fafb;
       --light-card: #ffffff;
       --light-text: #111827;
+      --light-muted: #4b5563;   /* light-theme secondary text, tuned >7:1 on card */
       --light-accent: #92400e;
       --light-border: #d1d5db;
     }
+    body.light .muted-text, body.light .stat-sub, body.light .empty-state,
+    body.light .vehicle-meta, body.light .trail-hint, body.light .pwa-banner-sub,
+    body.light .saved-banner-info, body.light .drop-zone-sub,
+    body.light .loader-tagline, body.light .loader-explanation,
+    body.light .loader-note, body.light .loader-kicker { color: var(--light-muted); }
+    .muted-text { color: var(--muted); }
     body { font-family: 'Syne', sans-serif; margin: 0; padding: 0; background: var(--bg); color: var(--text); transition: background 0.3s, color 0.3s; -webkit-tap-highlight-color: transparent; }
     body.light { background: var(--light-bg); color: var(--light-text); }
     button, .tab, .vehicle-chip, select, a { touch-action: manipulation; }
@@ -63,6 +71,16 @@
       .tab-icon { display: block; }
     }
     @media (max-width: 480px) { .tab { font-size: 0.65rem; } }
+    /* Very narrow phones (<375px): icon-only tabs so all 7 fit without
+       horizontal scroll. Text labels stay in the accessibility tree via an
+       sr-only clip. */
+    @media (max-width: 374px) {
+      .tab > span:not(.tab-icon) {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+      }
+      .tab-icon { font-size: 1.5rem; margin-bottom: 0; }
+    }
     .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
     .card { background: var(--card); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; }
@@ -121,7 +139,7 @@
     body.light .trail-conditions { border-color: var(--light-border); }
     .trail-conditions legend { padding: 0 0.5rem; font-size: 0.85rem; opacity: 0.85; }
     .trail-conditions label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer; }
-    .trail-hint { opacity: 0.75; font-size: 0.8rem; margin: 0.25rem 0; }
+    .trail-hint { color: var(--muted); font-size: 0.8rem; margin: 0.25rem 0; }
     .trail-condition-chip { display: inline-block; background: rgba(217, 119, 6, 0.15); color: var(--accent); padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-size: 0.72rem; margin-right: 0.25rem; }
     body.light .trail-condition-chip { background: rgba(146, 64, 14, 0.15); color: var(--light-accent); }
     @media (max-width: 480px) { .measurements-grid, .trail-conditions { grid-template-columns: 1fr; } }
@@ -132,13 +150,13 @@
     .loader-brand-icon { width: 2.5rem; height: 1.85rem; color: var(--accent); flex-shrink: 0; }
     body.light .loader-brand-icon { color: var(--light-accent); }
     .loader-hero-text { flex: 1; }
-    .loader-kicker { font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; font-weight: 700; }
+    .loader-kicker { font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
     .loader-hero h1 { margin: 0; font-size: 1.4rem; }
     .loader-lang { margin-left: auto; }
-    .loader-tagline { opacity: 0.85; font-size: 0.95rem; margin: 0.75rem 0 1rem; }
+    .loader-tagline { color: var(--muted); font-size: 0.95rem; margin: 0.75rem 0 1rem; }
     .saved-banner { background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 0.75rem; padding: 0.85rem 1rem; text-align: left; margin-bottom: 0.75rem; }
     .saved-banner-label { font-size: 0.8rem; font-weight: 700; color: #10b981; margin-bottom: 0.15rem; }
-    .saved-banner-info { font-size: 0.8rem; opacity: 0.75; margin-bottom: 0.65rem; }
+    .saved-banner-info { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.65rem; }
     .saved-banner-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: stretch; }
     .saved-continue { flex: 1; min-width: 200px; }
     .loader-divider { display: flex; align-items: center; gap: 0.75rem; margin: 0.9rem 0; font-size: 0.72rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.1em; }
@@ -150,7 +168,7 @@
     body.light .drop-zone:hover, body.light .drop-zone.drag-over { border-color: var(--light-accent); background: rgba(146, 64, 14, 0.08); }
     .drop-zone-icon { font-size: 1.6rem; margin-bottom: 0.25rem; }
     .drop-zone-text { font-weight: 700; font-size: 0.95rem; }
-    .drop-zone-sub { font-size: 0.78rem; opacity: 0.7; margin-top: 0.2rem; }
+    .drop-zone-sub { font-size: 0.78rem; color: var(--muted); margin-top: 0.2rem; }
     .loader-options { display: flex; flex-direction: column; gap: 0.6rem; }
     button.btn-outline, body.light button.btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); padding: 0.75rem 0.5rem; border-radius: 0.5rem; cursor: pointer; font-size: 0.9rem; }
     body.light button.btn-outline { border-color: var(--light-border); color: var(--light-text); }
@@ -167,12 +185,12 @@
     .loader-chip { background: transparent; border: 1px solid var(--border); color: var(--text); opacity: 0.75; }
     body.light .loader-chip { color: var(--light-text); border-color: var(--light-border); }
     .loader-chip:hover { border-color: var(--accent); color: var(--accent); opacity: 1; }
-    .loader-explanation { opacity: 0.7; margin-top: 0.25rem; font-size: 0.78rem; }
+    .loader-explanation { color: var(--muted); margin-top: 0.25rem; font-size: 0.78rem; }
     .loader-secondary { display: flex; gap: 0.75rem; margin-top: 0.85rem; justify-content: center; flex-wrap: wrap; }
     .interval-details { margin-top: 1rem; }
     .interval-fields { display: flex; gap: 1rem; margin-top: 0.5rem; }
     .reminder-item { color: #d97706; font-weight: bold; }
-    .loader-note { opacity: 0.75; margin-top: 0.85rem; font-size: 0.78rem; }
+    .loader-note { color: var(--muted); margin-top: 0.85rem; font-size: 0.78rem; }
     .loader-spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 1rem auto 0; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .progress-bar { width: 100%; height: 10px; background: var(--border); border-radius: 5px; overflow: hidden; margin: 0.5rem 0; }
@@ -187,7 +205,7 @@
     .stat-delta.positive { color: #10b981; }
     .stat-delta.negative { color: #dc2626; }
     .stat-big { font-size: 1.5rem; font-weight: 700; }
-    .stat-sub { opacity: 0.75; font-size: 0.85rem; }
+    .stat-sub { color: var(--muted); font-size: 0.85rem; }
     .engine-hint { margin: 0.35rem 0 0; font-style: italic; }
     .engine-hint.unknown { color: var(--accent); opacity: 0.9; }
     .template-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
@@ -207,6 +225,16 @@
     .edit-banner { background: var(--accent); color: white; padding: 0.5rem; border-radius: 0.25rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
     body.light .edit-banner { background: var(--light-accent); }
     .search-input { width: 100%; margin: 0.5rem 0; }
+    .search-wrap { position: relative; }
+    .search-wrap .search-input { padding-right: 2.5rem; }
+    .search-clear {
+      position: absolute; right: 0.25rem; top: 50%; transform: translateY(-50%);
+      background: transparent; color: var(--muted); border: 0; cursor: pointer;
+      padding: 0; min-width: 2.25rem; min-height: 2.25rem; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center; border-radius: 50%;
+    }
+    .search-clear:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+    body.light .search-clear:hover { color: var(--light-text); background: rgba(0,0,0,0.05); }
     .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 0.75rem 1rem; border-radius: 0.5rem; box-shadow: 0 4px 16px rgba(0,0,0,0.3); display: flex; gap: 1rem; align-items: center; z-index: 10000; max-width: calc(100% - 2rem); }
     body.light .toast { background: var(--light-card); color: var(--light-text); border-color: var(--light-border); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
     .toast-action { background: transparent; color: var(--accent); border: none; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 0.85rem; padding: 0 0.5rem; }
@@ -226,7 +254,7 @@
     .pwa-banner-icon { font-size: 1.7rem; flex-shrink: 0; }
     .pwa-banner-text { flex: 1; min-width: 0; }
     .pwa-banner-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.15rem; }
-    .pwa-banner-sub { font-size: 0.8rem; opacity: 0.8; line-height: 1.35; }
+    .pwa-banner-sub { font-size: 0.8rem; color: var(--muted); line-height: 1.35; }
     .pwa-banner-sub kbd { display: inline-block; padding: 1px 5px; background: var(--border); border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; }
     body.light .pwa-banner-sub kbd { background: var(--light-border); }
     .pwa-banner-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
@@ -241,6 +269,10 @@
     .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); display: none; align-items: center; justify-content: center; z-index: 10002; padding: 1rem; }
     .modal.open { display: flex; }
     .modal-card { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1.5rem; max-width: 420px; width: 100%; }
+    .report-modal-card { max-width: 900px; max-height: 90vh; display: flex; flex-direction: column; }
+    .report-modal-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    #reportFrame { width: 100%; flex: 1; min-height: 60vh; border: 1px solid var(--border); border-radius: 0.5rem; background: white; }
+    body.light #reportFrame { border-color: var(--light-border); }
     body.light .modal-card { background: var(--light-card); color: var(--light-text); border-color: var(--light-border); }
     .modal-card dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; }
     .modal-card dt { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
@@ -249,7 +281,7 @@
     button:focus-visible, .tab:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .del-btn:focus-visible, .edit-btn:focus-visible, .reminder-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     body.light :focus-visible { outline-color: var(--light-accent); }
     .photo-thumb { cursor: zoom-in; }
-    .vehicle-meta { opacity: 0.8; font-size: 0.9rem; margin-top: 0.25rem; }
+    .vehicle-meta { color: var(--muted); font-size: 0.9rem; margin-top: 0.25rem; }
     .vehicle-meta span { margin-right: 0.75rem; white-space: nowrap; }
     .reminder-item.due-soon { color: #c2410c; }
     body.light .reminder-item.due-soon { color: #9a3412; }
@@ -260,7 +292,7 @@
     body.light .entry-list li { border-bottom-color: var(--light-border); }
     .entry-list li:last-child { border-bottom: none; }
     .entry-list .entry-main { flex: 1; min-width: 0; }
-    .empty-state { opacity: 0.7; font-style: italic; padding: 0.5rem 0; }
+    .empty-state { color: var(--muted); font-style: italic; padding: 0.5rem 0; }
   </style>
 </head>
 <body>
@@ -505,7 +537,7 @@
           <canvas id="maintReminderStatusChart" class="chart" role="img" aria-label="Reminder status breakdown"></canvas>
         </div>
         <h3 data-i18n="maintenanceHistory">Maintenance History</h3>
-        <input type="search" id="maintenanceSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…">
+        <div class="search-wrap"><input type="search" id="maintenanceSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…"><button type="button" class="search-clear hidden" aria-label="Clear search">✕</button></div>
         <ul id="maintenanceList"></ul>
       </div>
     </div>
@@ -553,7 +585,7 @@
           <canvas id="mpgByConditionChart" class="chart" role="img" aria-label="MPG by driving condition"></canvas>
         </div>
         <div id="fuelStats"></div>
-        <input type="search" id="fuelSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…">
+        <div class="search-wrap"><input type="search" id="fuelSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…"><button type="button" class="search-clear hidden" aria-label="Clear search">✕</button></div>
         <ul id="fuelList"></ul>
       </div>
     </div>
@@ -613,7 +645,7 @@
           <h3 data-i18n="cardModsByCategory">Mods spend by category</h3>
           <canvas id="modsCategoryChart" class="chart" role="img" aria-label="Modifications spend by category"></canvas>
         </div>
-        <input type="search" id="modsSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…">
+        <div class="search-wrap"><input type="search" id="modsSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…"><button type="button" class="search-clear hidden" aria-label="Clear search">✕</button></div>
         <div id="modsList"></div>
       </div>
     </div>
@@ -652,7 +684,7 @@
           <h3 data-i18n="cardTrailsByCondition">Trail conditions logged</h3>
           <canvas id="trailsConditionChart" class="chart" role="img" aria-label="Trail condition frequency"></canvas>
         </div>
-        <input type="search" id="trailsSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…">
+        <div class="search-wrap"><input type="search" id="trailsSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…"><button type="button" class="search-clear hidden" aria-label="Clear search">✕</button></div>
         <ul id="trailsList"></ul>
       </div>
     </div>
@@ -683,7 +715,7 @@
           <h3 data-i18n="cardPartsValue">Inventory value by category</h3>
           <canvas id="partsInventoryChart" class="chart" role="img" aria-label="Parts inventory value by category"></canvas>
         </div>
-        <input type="search" id="partsSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…">
+        <div class="search-wrap"><input type="search" id="partsSearch" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…"><button type="button" class="search-clear hidden" aria-label="Clear search">✕</button></div>
         <div id="partsList"></div>
       </div>
     </div>
@@ -789,6 +821,12 @@
           <option value="5.38"></option>
         </datalist>
         <button id="deleteVehicleBtn" class="btn btn-danger" data-i18n="deleteVehicle">Delete active vehicle</button>
+        <h3 data-i18n="currencyHeading">Currency</h3>
+        <p class="stat-sub" data-i18n="currencyHint">Changes the symbol only — stored amounts aren't converted.</p>
+        <select id="currencySelect" aria-label="Currency">
+          <option value="USD">🇺🇸 US$ Dollars</option>
+          <option value="DOP">🇩🇴 RD$ Pesos</option>
+        </select>
         <label class="severe-service-label"><input type="checkbox" id="exportIncludePhotos" checked> <span data-i18n="exportIncludePhotos">Include photos in export</span></label>
         <button id="exportBtn" class="btn" data-i18n="exportData">Export Data</button>
         <input type="file" id="importFile" accept=".json">
@@ -822,6 +860,18 @@
         <dt>?</dt><dd data-i18n="shortcutHelp">Show this help</dd>
       </dl>
       <button type="button" id="shortcutsClose" class="btn" style="margin-top: 1rem;" data-i18n="closeBtn">Close</button>
+    </div>
+  </div>
+  <div id="reportModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="reportModalTitle">
+    <div class="modal-card report-modal-card">
+      <div class="report-modal-header">
+        <h3 id="reportModalTitle" data-i18n="reportTitle">Service History Report</h3>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" id="reportPrintBtn" class="btn" data-i18n="reportPrint">Print</button>
+          <button type="button" id="reportCloseBtn" class="btn btn-ghost" aria-label="Close" data-i18n="closeBtn">Close</button>
+        </div>
+      </div>
+      <iframe id="reportFrame" title="Service report"></iframe>
     </div>
   </div>
   <div id="currencyModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="currencyModalTitle">
@@ -1053,6 +1103,7 @@
         editingEntry: "Editing…",
         importInvalid: "Import failed: invalid file format. No data changed.",
         searchPlaceholder: "Search…",
+        showAllEntries: "Show all (+{n})",
         noResults: "No results match your search.",
         noRecentMaintenance: "No maintenance logged yet.",
         noRecentFuel: "No fuel entries yet.",
@@ -1311,8 +1362,10 @@
         savedInfoParts: "parts",
         confirmDeleteSaved: "Delete all saved data? This cannot be undone.",
         exportedBackup: "Backup downloaded.",
+        currencyHeading: "Currency",
+        currencyHint: "Changes the symbol only — stored amounts aren't converted.",
         pickCurrencyTitle: "Pick a currency",
-        pickCurrencyHint: "This affects how prices are shown. You can change it later by starting fresh.",
+        pickCurrencyHint: "This affects how prices are shown. You can change it later in Settings.",
         currencyUsd: "US$ Dollars",
         currencyDop: "RD$ Pesos",
         noUpcomingReminders: "No upcoming service reminders",
@@ -1472,6 +1525,7 @@
         editingEntry: "Editando…",
         importInvalid: "Error al importar: formato inválido. No se cambiaron datos.",
         searchPlaceholder: "Buscar…",
+        showAllEntries: "Ver todos (+{n})",
         noResults: "Sin resultados.",
         noRecentMaintenance: "Aún no hay mantenimiento registrado.",
         noRecentFuel: "Aún no hay entradas de combustible.",
@@ -1732,8 +1786,10 @@
         savedInfoParts: "piezas",
         confirmDeleteSaved: "¿Eliminar todos los datos guardados? No se puede deshacer.",
         exportedBackup: "Respaldo descargado.",
+        currencyHeading: "Moneda",
+        currencyHint: "Solo cambia el símbolo — los montos guardados no se convierten.",
         pickCurrencyTitle: "Elige una moneda",
-        pickCurrencyHint: "Afecta cómo se muestran los precios. Puedes cambiarla después con Empezar de cero.",
+        pickCurrencyHint: "Afecta cómo se muestran los precios. Puedes cambiarla después en Configuración.",
         currencyUsd: "US$ Dólares",
         currencyDop: "RD$ Pesos",
         noUpcomingReminders: "Sin recordatorios próximos",
@@ -1941,6 +1997,42 @@
       if (navigator.vibrate) { try { navigator.vibrate(ms); } catch {} }
     }
 
+    // Search-clear: delegated click on the ✕ button clears the sibling input
+    // and fires `input` so the renderer re-runs; `input` event on any search
+    // field toggles the button's visibility. iOS <input type=search> ships its
+    // own clear affordance but Chrome Android doesn't — this fills the gap.
+    document.addEventListener('input', (e) => {
+      if (!e.target.matches?.('.search-wrap .search-input')) return;
+      const btn = e.target.parentElement.querySelector('.search-clear');
+      if (btn) btn.classList.toggle('hidden', !e.target.value);
+    });
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest?.('.search-clear');
+      if (!btn) return;
+      const input = btn.parentElement.querySelector('.search-input');
+      if (!input) return;
+      input.value = '';
+      btn.classList.add('hidden');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.focus();
+    });
+
+    // Show-all button — lifts the per-tab row cap and re-renders that tab.
+    // State is session-only (resets on reload), so a one-off "show me everything"
+    // doesn't leave the DOM permanently huge.
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest?.('.show-all');
+      if (!btn) return;
+      const name = btn.dataset.list;
+      if (!(name in listShowAll)) return;
+      listShowAll[name] = true;
+      if (name === 'maintenance') await loadMaintenance();
+      else if (name === 'fuel')   await loadFuel();
+      else if (name === 'mods')   await loadMods();
+      else if (name === 'trails') await loadTrails();
+      else if (name === 'parts')  await loadParts();
+    });
+
     // Modal focus management. On open, stash the currently-focused element,
     // move focus into the modal, and trap Tab/Shift-Tab within it so keyboard
     // users can't accidentally tab back to the underlying form. On close,
@@ -2049,6 +2141,23 @@
 
     function t(key) { return applyCurrencyTokens(I18N[lang][key] || key); }
     function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    // List pagination. Large personal histories (years of fills + maintenance)
+    // render every row into the DOM on every tab open — fine at 40 rows, not
+    // at 2000. Default cap + opt-in "Show all" button keeps the first render
+    // cheap; Show-all state is session-only so it resets on reload.
+    const DEFAULT_LIST_CAP = 100;
+    const listShowAll = { maintenance: false, fuel: false, mods: false, trails: false, parts: false };
+    function capList(listName, filtered) {
+      if (listShowAll[listName] || filtered.length <= DEFAULT_LIST_CAP) {
+        return { items: filtered, truncated: 0 };
+      }
+      return { items: filtered.slice(0, DEFAULT_LIST_CAP), truncated: filtered.length - DEFAULT_LIST_CAP };
+    }
+    function showAllButton(listName, truncated) {
+      const label = t('showAllEntries').replace('{n}', truncated);
+      return `<button type="button" class="btn-sm show-all" data-list="${listName}" style="margin: 0.5rem 0; display: block;">${escHtml(label)}</button>`;
+    }
 
     // --- Draft auto-save -------------------------------------------------
     // Each write form (add-vehicle, maintenance, fuel, mods, trails, parts)
@@ -3198,7 +3307,9 @@
         list.innerHTML = `<li class="empty-state">${t(query ? 'noResults' : 'noRecentFuel')}</li>`;
         return;
       }
-      list.innerHTML = filtered.slice().reverse().map(f => {
+      const reversed = filtered.slice().reverse();
+      const { items, truncated } = capList('fuel', reversed);
+      list.innerHTML = items.map(f => {
         const pricePerGal = f.gallons > 0 ? (f.cost / f.gallons).toFixed(2) : '—';
         const mpgBit = f.mpg != null ? `${f.mpg.toFixed(1)} MPG` : t('fuelRowMpgMissing');
         const stationBit = f.station ? ` · ${escHtml(f.station)}` : '';
@@ -3210,7 +3321,7 @@
           <span class="entry-main">${escHtml(f.date)}: ${f.gallons} gal @ ${currencySym()}${pricePerGal}/gal · ${mpgBit}${stationBit}${typeBit}${drivingBit}${partialBit}</span>
           ${rowActions(f.id)}
         </li>`;
-      }).join('');
+      }).join('') + (truncated ? showAllButton('fuel', truncated) : '');
     }
 
     async function loadMaintenance() {
@@ -3273,12 +3384,13 @@
         list.innerHTML = `<li class="empty-state">${t('noResults')}</li>`;
         return;
       }
-      list.innerHTML = filtered.map(m => `
+      const { items: capped, truncated } = capList('maintenance', filtered);
+      list.innerHTML = capped.map(m => `
         <li>
           <span class="entry-main">${m.photo ? `<img src="${escHtml(m.photo)}" class="photo-thumb" alt="">` : ''}${escHtml(m.date)} · ${escHtml(m.type)} · ${escHtml(m.odometer)} mi · ${currencySym()}${(m.cost||0).toFixed(2)} · ${m.shop ? 'Shop' : 'DIY'}${m.notes ? ` · ${escHtml(m.notes)}` : ''}</span>
           ${rowActions(m.id)}
         </li>
-      `).join('');
+      `).join('') + (truncated ? showAllButton('maintenance', truncated) : '');
     }
 
     // Search wires
@@ -3372,7 +3484,8 @@
         return;
       }
       // Group by category like Mods. Parts without a category land in Other.
-      const grouped = filtered.reduce((acc, p) => {
+      const { items: capped, truncated } = capList('parts', filtered);
+      const grouped = capped.reduce((acc, p) => {
         const cat = p.category || 'Other';
         (acc[cat] = acc[cat] || []).push(p);
         return acc;
@@ -3397,7 +3510,7 @@
           ? `<p>${t('partTotalLabel')}: ${currencySym()}${subtotal.toFixed(2)}</p>`
           : '';
         return `<h3>${escHtml(cat)}</h3><ul class="entry-list">${rows}</ul>${totalLine}`;
-      }).join('');
+      }).join('') + (truncated ? showAllButton('parts', truncated) : '');
     }
 
     document.getElementById('partsSearch').addEventListener('input', async () => {
@@ -3726,10 +3839,27 @@ ${maint.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.odometer)}</td>
 ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><td>${escHtml(m.part)}</td><td>${escHtml(m.brand || '')}</td><td>${currencySym()}${(m.cost||0).toFixed(2)}</td><td>${m.installed ? 'Yes' : 'No'}</td></tr>`).join('')}
 </tbody></table>
 </body></html>`;
-      const win = window.open('', '_blank');
-      if (!win) { alert('Popup blocked — please allow popups to view the report.'); return; }
-      win.document.write(html);
-      win.document.close();
+      // Render into an in-page iframe modal instead of window.open — mobile
+      // Safari blocks popups, and a report hidden behind an "allow popups"
+      // dialog isn't useful. The iframe keeps the report isolated (its own
+      // styles, its own print scope) without needing a new window.
+      const iframe = document.getElementById('reportFrame');
+      iframe.srcdoc = html;
+      openModal(document.getElementById('reportModal'));
+    });
+    document.getElementById('reportPrintBtn').addEventListener('click', () => {
+      const iframe = document.getElementById('reportFrame');
+      try { iframe.contentWindow.focus(); iframe.contentWindow.print(); }
+      catch (err) { console.error('report print', err); }
+    });
+    document.getElementById('reportCloseBtn').addEventListener('click', () => {
+      closeModal(document.getElementById('reportModal'));
+    });
+    document.getElementById('reportModal').addEventListener('click', (e) => {
+      if (e.target.id === 'reportModal') closeModal(e.target);
+    });
+    document.getElementById('reportModal').addEventListener('keydown', (e) => {
+      trapTab(document.getElementById('reportModal'), e);
     });
 
     async function loadMods() {
@@ -3775,7 +3905,8 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       const container = document.getElementById('modsList');
       if (!all.length) { container.innerHTML = `<p class="empty-state">${t('noMods')}</p>`; return; }
       if (!mods.length) { container.innerHTML = `<p class="empty-state">${t('noModsMatch')}</p>`; return; }
-      const grouped = mods.reduce((acc, m) => {
+      const { items: capped, truncated } = capList('mods', mods);
+      const grouped = capped.reduce((acc, m) => {
         acc[m.category] = acc[m.category] || [];
         acc[m.category].push(m);
         return acc;
@@ -3798,7 +3929,7 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
           </li>`;
         }).join('')}</ul>
         <p>${t('modTotalLabel')}: ${currencySym()}${ms.reduce((sum,m)=>sum+(m.cost||0),0).toFixed(2)}</p>
-      `).join('');
+      `).join('') + (truncated ? showAllButton('mods', truncated) : '');
     }
 
     document.getElementById('modsSearch').addEventListener('input', async () => {
@@ -4022,7 +4153,8 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
         list.innerHTML = `<li class="empty-state">${t('noTrailsMatch')}</li>`;
         return;
       }
-      list.innerHTML = filtered.map(x => {
+      const { items: capped, truncated } = capList('trails', filtered);
+      list.innerHTML = capped.map(x => {
         const chips = (x.conditions || []).map(c => `<span class="trail-condition-chip">${escHtml(c)}</span>`).join('');
         const dur = x.durationHours ? ` · ${x.durationHours}h` : '';
         const odo = x.odometer ? ` · ${escHtml(x.odometer)} mi` : '';
@@ -4034,7 +4166,7 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
           <span class="entry-main">${escHtml(x.date)} · ${escHtml(x.name)}${odo}${dur}${psi}${depth} ${chips}${damageBit}${notes}</span>
           ${rowActions(x.id)}
         </li>`;
-      }).join('');
+      }).join('') + (truncated ? showAllButton('trails', truncated) : '');
     }
 
     document.getElementById('trailsSearch').addEventListener('input', async () => {
@@ -4186,6 +4318,19 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
     // Bump when the data shape changes meaningfully — import uses this to warn
     // if a backup was made with a newer or older schema than the current app.
     const SCHEMA_VERSION = 1;
+
+    // Currency selector in Settings — used to live only on the Start Fresh
+    // modal, which meant switching currencies required nuking your data.
+    (function wireCurrencySelect() {
+      const sel = document.getElementById('currencySelect');
+      if (!sel) return;
+      sel.value = currency;
+      sel.addEventListener('change', () => {
+        currency = sel.value;
+        localStorage.setItem('currency', currency);
+        setLang(lang); // re-applies placeholders + re-renders dynamic cards
+      });
+    })();
 
     document.getElementById('exportBtn').addEventListener('click', async () => {
       const includePhotos = document.getElementById('exportIncludePhotos')?.checked ?? true;
@@ -4511,8 +4656,10 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       if (e.key === 'Escape') {
         const lb = document.getElementById('lightbox');
         const sm = document.getElementById('shortcutsModal');
+        const rm = document.getElementById('reportModal');
         if (lb.classList.contains('open')) { closeModal(lb); return; }
         if (sm.classList.contains('open')) { closeModal(sm); return; }
+        if (rm.classList.contains('open')) { closeModal(rm); return; }
         // currencyModal handles its own Escape inside pickCurrency() — closing
         // here would leave the awaiting promise dangling and hang Start Fresh.
         if (editState.maintenance) { document.getElementById('maintenanceForm').reset(); exitMaintenanceEdit(); }

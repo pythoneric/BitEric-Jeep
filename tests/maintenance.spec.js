@@ -142,13 +142,16 @@ test('duplicate entry warns before saving', async ({ page }) => {
   expect(dialogs.some((d) => /similar entry/i.test(d))).toBe(true);
 });
 
-test('print service report opens a new window with totals', async ({ page, context }) => {
+test('print service report opens an in-page modal with totals', async ({ page }) => {
   await loadDemoTruck(page);
   await switchTab(page, 'maintenance');
-  const [report] = await Promise.all([context.waitForEvent('page'), page.click('#reportBtn')]);
+  await page.click('#reportBtn');
+  await expect(page.locator('#reportModal.open')).toBeVisible();
+  const report = page.frameLocator('#reportFrame');
   await expect(report.locator('h1')).toContainText(/Service History|Historial/);
   await expect(report.locator('h2').first()).toBeVisible();
-  await report.close();
+  await page.click('#reportCloseBtn');
+  await expect(page.locator('#reportModal.open')).toHaveCount(0);
 });
 
 // --- Engine-aware template intervals (3.6L Pentastar, 3.8L V6 JK, EcoDiesel, 2.0L Turbo) ---
@@ -339,7 +342,7 @@ test('measurement fields round-trip through edit mode', async ({ page }) => {
   await expect(page.locator('#mDotDate')).toHaveValue('3422');
 });
 
-test('service report surfaces the selected currency symbol', async ({ page, context }) => {
+test('service report surfaces the selected currency symbol', async ({ page }) => {
   await startFresh(page, { currency: 'DOP' });
   await switchTab(page, 'maintenance');
   await page.fill('#mDate', '2024-06-01');
@@ -347,10 +350,12 @@ test('service report surfaces the selected currency symbol', async ({ page, cont
   await page.selectOption('#mType', 'Oil change');
   await page.fill('#mCost', '3500');
   await page.click('#maintenanceForm button[type="submit"]');
-  const [report] = await Promise.all([context.waitForEvent('page'), page.click('#reportBtn')]);
+  await page.click('#reportBtn');
+  await expect(page.locator('#reportModal.open')).toBeVisible();
+  const report = page.frameLocator('#reportFrame');
   // Maintenance row in the report should carry the RD$ prefix on its cost cell.
   await expect(report.locator('table').first()).toContainText('RD$3500.00');
   // And the Maintenance total-box should say RD$3500.00, not $3500.00.
   await expect(report.locator('.total-box').first()).toContainText('RD$3500.00');
-  await report.close();
+  await page.click('#reportCloseBtn');
 });
