@@ -61,3 +61,44 @@ test('Test button fires a notification via the service worker when granted', asy
   await page.click('#notifTestBtn');
   await expect.poll(() => page.evaluate(() => window.__swFires)).toBeGreaterThanOrEqual(1);
 });
+
+test('notifyDueReminders throttles via the 24h-per-id localStorage marker', async ({ page }) => {
+  await stubNotification(page, 'granted');
+  await startFresh(page);
+  // Set up: one document that will count as overdue regardless of timezone.
+  await switchTab(page, 'docs');
+  await page.selectOption('#docType', 'registration');
+  await page.fill('#docName', 'Expired plate');
+  // Far enough in the past that TZ rounding can't flip it out of "overdue".
+  await page.fill('#docExpirationDate', '2020-01-01');
+  await page.fill('#docReminderDays', '30');
+  await page.click('#docsForm button[type="submit"]');
+  // Seed the throttle marker so notifyDueReminders will skip this doc's id.
+  // The marker key is "d:<id>" and must be less than 24h old.
+  const docId = await page.evaluate(async () => {
+    const req = indexedDB.open('biteric-jeep');
+    return new Promise(resolve => {
+      req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction('documents', 'readonly');
+        const store = tx.objectStore('documents');
+        const all = store.getAll();
+        all.onsuccess = () => resolve(all.result[0]?.id);
+      };
+    });
+  });
+  expect(docId).toBeTruthy();
+  // Intercept the SW fire path; seed the throttle; call the scheduler.
+  const fires = await page.evaluate(async ({ id }) => {
+    let swFires = 0;
+    const reg = await navigator.serviceWorker.ready;
+    const orig = reg.showNotification.bind(reg);
+    reg.showNotification = (t, o) => { swFires++; return orig(t, o); };
+    localStorage.setItem('notifiedAt', JSON.stringify({ [`d:${id}`]: Date.now() }));
+    if (typeof notifyDueReminders !== 'function') return 'missing';
+    await notifyDueReminders();
+    return swFires;
+  }, { id: docId });
+  // Throttle hit → no document notification fired.
+  expect(fires).toBe(0);
+});

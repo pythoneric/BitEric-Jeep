@@ -128,3 +128,59 @@ test('inventory clamps at 0 when user over-consumes', async ({ page }) => {
   await switchTab(page, 'parts');
   await expect(page.locator('#partsList li').first()).toContainText('0x');
 });
+
+test('undo-delete re-consumes the parts it just returned', async ({ page }) => {
+  await startFresh(page);
+  await addPart(page, { name: 'Oil filter', quantity: '3' });
+  await addMaintenanceWithParts(page, {
+    picks: [{ name: 'Oil filter', quantity: 1 }],
+  });
+  // After submit: 3 − 1 = 2 available.
+  await switchTab(page, 'parts');
+  await expect(page.locator('#partsList li').first()).toContainText('2x');
+  // Delete, accept confirm → stock returns to 3.
+  await switchTab(page, 'maintenance');
+  page.once('dialog', d => d.accept());
+  await page.click('#maintenanceList .del-btn');
+  await switchTab(page, 'parts');
+  await expect(page.locator('#partsList li').first()).toContainText('3x');
+  // Undo via toast action → stock re-consumed, back to 2.
+  await switchTab(page, 'maintenance');
+  await page.click('#toastAction');
+  await switchTab(page, 'parts');
+  await expect(page.locator('#partsList li').first()).toContainText('2x');
+});
+
+test('dangling reference renders "(deleted part)" after the part is removed', async ({ page }) => {
+  await startFresh(page);
+  await addPart(page, { name: 'Brake pads', quantity: '4' });
+  await addMaintenanceWithParts(page, {
+    type: 'Brake pads',
+    picks: [{ name: 'Brake pads', quantity: 1 }],
+  });
+  // Now delete the part itself from the Parts tab.
+  await switchTab(page, 'parts');
+  page.once('dialog', d => d.accept());
+  await page.click('#partsList .del-btn');
+  // The earlier maintenance row should still render, but with the deleted-part
+  // placeholder rather than the now-missing name.
+  await switchTab(page, 'maintenance');
+  await expect(page.locator('#maintenanceList li').first()).toContainText(/\(deleted part\)|\(pieza eliminada\)/);
+});
+
+test('picker dropdown shows live stock — "avail: N" reflects prior usage', async ({ page }) => {
+  await startFresh(page);
+  await addPart(page, { name: 'Mobil 1 5W-30', quantity: '10' });
+  await addMaintenanceWithParts(page, {
+    type: 'Oil change',
+    picks: [{ name: 'Mobil 1 5W-30', quantity: 6 }],
+  });
+  // Open the form again and a new row — the option text should reflect the
+  // remaining 4 in stock, not the original 10.
+  await switchTab(page, 'maintenance');
+  const details = page.locator('.parts-used-details');
+  await details.evaluate(el => el.open = true);
+  await page.click('#addPartUsedBtn');
+  const row = page.locator('#partsUsedRows .part-used-row').last();
+  await expect(row.locator('.part-used-select option').filter({ hasText: 'Mobil 1' })).toContainText(/avail: 4|disp\.: 4/);
+});
