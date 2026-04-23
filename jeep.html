@@ -675,6 +675,12 @@
             <label><input type="checkbox" id="mFollowUpLift"> <span data-i18n="followUpLift">Re-torque lift-kit bolts at +500 miles</span></label>
             <label><input type="checkbox" id="mFollowUpAlignment"> <span data-i18n="followUpAlignment">Alignment check at +500 miles</span></label>
           </details>
+          <details class="parts-used-details">
+            <summary data-i18n="partsUsedLabel">Parts used from inventory (optional)</summary>
+            <p class="trail-hint" data-i18n="partsUsedHint">Quantities will be deducted from the Parts tab automatically.</p>
+            <div id="partsUsedRows"></div>
+            <button type="button" class="btn btn-ghost" id="addPartUsedBtn" data-i18n="addPartUsedBtn">+ Add part</button>
+          </details>
           <label data-i18n="maintPhoto">Receipt (optional)</label>
           <input type="file" id="mPhotoFile" accept="image/*">
           <img id="mPhotoPreview" class="photo-preview hidden" alt="">
@@ -1713,7 +1719,17 @@
         tiresNoTread: "No tread measurements.",
         tiresLowTreadWarn: "⚠️ Low tread — consider replacement",
         tiresRotationOverdue: "⚠️ Rotation overdue (>{miles} mi since last)",
-        savedInfoTires: "tires"
+        savedInfoTires: "tires",
+        partsUsedLabel: "Parts used from inventory (optional)",
+        partsUsedHint: "Quantities will be deducted from the Parts tab automatically.",
+        partsUsedRowQty: "Qty",
+        partsUsedRowRemove: "Remove",
+        partsUsedSelectPart: "Choose a part…",
+        partsUsedNoInventory: "No parts in inventory for this vehicle. Add some on the Parts tab first.",
+        addPartUsedBtn: "+ Add part",
+        partsUsedRendered: "Used",
+        partsUsedAvail: "avail: {n}",
+        partsUsedDeleted: "(deleted part)"
       },
       es: {
         appTitle: "BitEric Jeep",
@@ -2227,7 +2243,17 @@
         tiresNoTread: "Sin mediciones.",
         tiresLowTreadWarn: "⚠️ Banda baja — considera reemplazo",
         tiresRotationOverdue: "⚠️ Rotación atrasada (>{miles} mi desde la última)",
-        savedInfoTires: "llantas"
+        savedInfoTires: "llantas",
+        partsUsedLabel: "Piezas usadas del inventario (opcional)",
+        partsUsedHint: "Las cantidades se descontarán automáticamente de la pestaña Piezas.",
+        partsUsedRowQty: "Cant.",
+        partsUsedRowRemove: "Quitar",
+        partsUsedSelectPart: "Elige una pieza…",
+        partsUsedNoInventory: "Sin piezas en el inventario para este vehículo. Agrega algunas en la pestaña Piezas.",
+        addPartUsedBtn: "+ Agregar pieza",
+        partsUsedRendered: "Usadas",
+        partsUsedAvail: "disp.: {n}",
+        partsUsedDeleted: "(pieza eliminada)"
       }
     };
 
@@ -3426,6 +3452,117 @@
       }
     });
 
+    // Parts-used picker — inline multi-row selector living inside the
+    // maintenance form. Each row binds a part (dropdown) to a quantity. On
+    // submit, the diff between the old and new partsUsed maps is applied to
+    // the Parts inventory; delete / undo-delete mirror the reversal.
+    async function availablePartsForVehicle() {
+      const parts = await db.getAll('parts');
+      return parts.filter(p => p.vehicleId === activeVehicleId)
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    }
+
+    async function addPartUsedRow(partId = null, quantity = 1) {
+      const container = document.getElementById('partsUsedRows');
+      if (!container) return null;
+      const row = document.createElement('div');
+      row.className = 'part-used-row';
+      row.style.cssText = 'display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;';
+      const sel = document.createElement('select');
+      sel.className = 'part-used-select';
+      sel.style.flex = '2';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = t('partsUsedSelectPart');
+      placeholder.disabled = true;
+      sel.appendChild(placeholder);
+      const parts = await availablePartsForVehicle();
+      for (const p of parts) {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.name} · ${t('partsUsedAvail').replace('{n}', +p.quantity || 0)}`;
+        sel.appendChild(opt);
+      }
+      // Dangling reference (part deleted after being recorded). Surface it as
+      // a disabled option so the edit view keeps the link visible rather than
+      // silently dropping the partId.
+      if (partId && !parts.find(p => p.id === partId)) {
+        const opt = document.createElement('option');
+        opt.value = partId;
+        opt.textContent = t('partsUsedDeleted');
+        sel.appendChild(opt);
+      }
+      sel.value = partId || '';
+      const qty = document.createElement('input');
+      qty.type = 'number';
+      qty.className = 'part-used-qty';
+      qty.min = '1';
+      qty.value = String(+quantity || 1);
+      qty.style.flex = '1';
+      qty.setAttribute('aria-label', t('partsUsedRowQty'));
+      const rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'btn btn-ghost part-used-remove';
+      rm.textContent = '✕';
+      rm.setAttribute('aria-label', t('partsUsedRowRemove'));
+      rm.addEventListener('click', () => row.remove());
+      row.appendChild(sel);
+      row.appendChild(qty);
+      row.appendChild(rm);
+      container.appendChild(row);
+      return row;
+    }
+
+    function clearPartsUsedRows() {
+      const container = document.getElementById('partsUsedRows');
+      if (container) container.innerHTML = '';
+    }
+
+    function readPartsUsed() {
+      const rows = document.querySelectorAll('#partsUsedRows .part-used-row');
+      const out = [];
+      for (const row of rows) {
+        const partId = row.querySelector('.part-used-select').value;
+        const quantity = +row.querySelector('.part-used-qty').value || 0;
+        if (partId && quantity > 0) out.push({ partId, quantity });
+      }
+      return out;
+    }
+
+    function aggregatePartsUsed(list) {
+      const map = new Map();
+      for (const p of (list || [])) {
+        if (!p || !p.partId) continue;
+        const q = +p.quantity || 0;
+        if (q <= 0) continue;
+        map.set(p.partId, (map.get(p.partId) || 0) + q);
+      }
+      return map;
+    }
+
+    // from = what was previously recorded as used by this entry;
+    // to   = what will now be recorded as used.
+    // Inventory delta per part = (from.qty) - (to.qty): positive returns stock,
+    // negative consumes stock. Clamped at 0 so a user who under-tracked their
+    // inventory can still log an accurate service without negative quantities.
+    async function applyPartsInventoryDelta(from, to) {
+      const ids = new Set([...from.keys(), ...to.keys()]);
+      if (!ids.size) return;
+      const parts = await db.getAll('parts');
+      for (const id of ids) {
+        const p = parts.find(x => x.id === id);
+        if (!p) continue;
+        const delta = (from.get(id) || 0) - (to.get(id) || 0);
+        if (delta === 0) continue;
+        const next = Math.max(0, (+p.quantity || 0) + delta);
+        await db.put('parts', { ...p, quantity: next, updatedAt: new Date() });
+      }
+    }
+
+    document.getElementById('addPartUsedBtn').addEventListener('click', () => {
+      addPartUsedRow().catch(err => console.error('addPartUsedRow', err));
+    });
+
     // Maintenance
     document.getElementById('maintenanceForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -3467,6 +3604,12 @@
         rr: +document.getElementById('mTreadRR').value || null,
       };
       const hasTreads = Object.values(treads).some(v => v != null);
+      const newPartsUsed = readPartsUsed();
+      let oldUsedMap = new Map();
+      if (editState.maintenance) {
+        const existing = (await db.getAll('maintenance')).find(x => x.id === editState.maintenance);
+        if (existing) oldUsedMap = aggregatePartsUsed(existing.partsUsed);
+      }
       const data = {
         id: editState.maintenance || crypto.randomUUID(),
         vehicleId: activeVehicleId,
@@ -3484,7 +3627,8 @@
         padFront: +document.getElementById('mPadFront').value || null,
         padRear: +document.getElementById('mPadRear').value || null,
         treadDepths: hasTreads ? treads : null,
-        dotDateCode: document.getElementById('mDotDate').value || null
+        dotDateCode: document.getElementById('mDotDate').value || null,
+        partsUsed: newPartsUsed
       };
       if (editState.maintenance) {
         await db.put('maintenance', data);
@@ -3498,11 +3642,14 @@
         if (document.getElementById('mFollowUpAlignment').checked) spawns.push({ type: 'Alignment', miles: 500 });
         for (const s of spawns) await spawnFollowUp(s, odometer, date);
       }
+      await applyPartsInventoryDelta(oldUsedMap, aggregatePartsUsed(newPartsUsed));
       await bumpVehicleOdometer(odometer);
       maintPhotoDataUrl = null;
       document.getElementById('mPhotoPreview').classList.add('hidden');
       document.getElementById('mPhotoPreview').removeAttribute('src');
+      clearPartsUsedRows();
       await loadMaintenance();
+      await loadParts();
       await loadDashboard();
       e.target.reset();
       document.getElementById('mType').dispatchEvent(new Event('change'));
@@ -3543,11 +3690,35 @@
       btn.textContent = t('addEntry');
     }
 
-    // Maintenance list edit/delete
+    // Maintenance list edit/delete. Delete is custom (not via confirmDelete)
+    // because it has to reverse the partsUsed inventory deduction and restore
+    // it if the user clicks undo within the toast window.
+    async function deleteMaintenanceEntry(id) {
+      if (!confirm(t('confirmDelete'))) return;
+      const items = await db.getAll('maintenance');
+      const snapshot = items.find(x => x.id === id);
+      if (!snapshot) return;
+      const usedMap = aggregatePartsUsed(snapshot.partsUsed);
+      // Return stock: delta goes from "consumed" back to "available".
+      await applyPartsInventoryDelta(usedMap, new Map());
+      await db.delete('maintenance', id);
+      await loadMaintenance();
+      await loadParts();
+      await loadDashboard();
+      showUndoToast(t('undoDelete'), async () => {
+        await db.add('maintenance', snapshot);
+        // Re-consume the same stock we just returned.
+        await applyPartsInventoryDelta(new Map(), usedMap);
+        await loadMaintenance();
+        await loadParts();
+        await loadDashboard();
+      });
+    }
+
     document.getElementById('maintenanceList').addEventListener('click', async (e) => {
       const delEl = e.target.closest('.del-btn');
       if (delEl) {
-        await confirmDelete('maintenance', delEl.dataset.id, loadMaintenance);
+        await deleteMaintenanceEntry(delEl.dataset.id);
         return;
       }
       const editEl = e.target.closest('.edit-btn');
@@ -3584,8 +3755,21 @@
         const mPreview = document.getElementById('mPhotoPreview');
         if (m.photo) { mPreview.src = m.photo; mPreview.classList.remove('hidden'); }
         else { mPreview.classList.add('hidden'); mPreview.removeAttribute('src'); }
+        clearPartsUsedRows();
+        for (const u of (m.partsUsed || [])) await addPartUsedRow(u.partId, u.quantity);
+        if (m.partsUsed && m.partsUsed.length) {
+          const details = document.querySelector('.parts-used-details');
+          if (details) details.open = true;
+        }
         const form = document.getElementById('maintenanceForm');
-        setEditBanner(form, `${t('editingEntry')} ${m.type}`, () => { form.reset(); exitMaintenanceEdit(); maintPhotoDataUrl = null; mPreview.classList.add('hidden'); mPreview.removeAttribute('src'); });
+        setEditBanner(form, `${t('editingEntry')} ${m.type}`, () => {
+          form.reset();
+          exitMaintenanceEdit();
+          maintPhotoDataUrl = null;
+          mPreview.classList.add('hidden');
+          mPreview.removeAttribute('src');
+          clearPartsUsedRows();
+        });
         form.querySelector('button[type="submit"]').textContent = t('updateEntry');
         form.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
@@ -3832,7 +4016,7 @@
 
     async function loadMaintenance() {
       const items = (await db.getAll('maintenance')).filter(m => m.vehicleId === activeVehicleId).sort((a,b) => new Date(b.date) - new Date(a.date));
-      renderMaintenanceList(items);
+      await renderMaintenanceList(items);
       await renderReminderStatusChart(items);
       await refreshEngineHint();
       if (!editState.maintenance) restoreDraft('maintenanceForm');
@@ -3875,7 +4059,7 @@
       });
     }
 
-    function renderMaintenanceList(items) {
+    async function renderMaintenanceList(items) {
       const list = document.getElementById('maintenanceList');
       list.className = 'entry-list';
       if (items.length === 0) {
@@ -3890,19 +4074,31 @@
         list.innerHTML = `<li class="empty-state">${t('noResults')}</li>`;
         return;
       }
+      // Single parts-lookup for all rows — avoids N queries. A row whose partId
+      // no longer resolves (part deleted later) prints as "(deleted part)".
+      const partsById = new Map((await db.getAll('parts')).map(p => [p.id, p]));
       const { items: capped, truncated } = capList('maintenance', filtered);
-      list.innerHTML = capped.map(m => `
+      list.innerHTML = capped.map(m => {
+        const usedBit = m.partsUsed && m.partsUsed.length
+          ? ` · ${escHtml(t('partsUsedRendered'))}: ${m.partsUsed.map(u => {
+              const p = partsById.get(u.partId);
+              const name = p ? p.name : t('partsUsedDeleted');
+              return `${+u.quantity || 0}× ${escHtml(name)}`;
+            }).join(', ')}`
+          : '';
+        return `
         <li>
-          <span class="entry-main">${m.photo ? `<img src="${escHtml(m.photo)}" class="photo-thumb" alt="">` : ''}${escHtml(m.date)} · ${escHtml(m.type)} · ${escHtml(m.odometer)} mi · ${currencySym()}${(m.cost||0).toFixed(2)} · ${m.shop ? 'Shop' : 'DIY'}${m.notes ? ` · ${escHtml(m.notes)}` : ''}</span>
+          <span class="entry-main">${m.photo ? `<img src="${escHtml(m.photo)}" class="photo-thumb" alt="">` : ''}${escHtml(m.date)} · ${escHtml(m.type)} · ${escHtml(m.odometer)} mi · ${currencySym()}${(m.cost||0).toFixed(2)} · ${m.shop ? 'Shop' : 'DIY'}${m.notes ? ` · ${escHtml(m.notes)}` : ''}${usedBit}</span>
           ${rowActions(m.id)}
         </li>
-      `).join('') + (truncated ? showAllButton('maintenance', truncated) : '');
+      `;
+      }).join('') + (truncated ? showAllButton('maintenance', truncated) : '');
     }
 
     // Search wires
     document.getElementById('maintenanceSearch').addEventListener('input', async () => {
       const items = (await db.getAll('maintenance')).filter(m => m.vehicleId === activeVehicleId).sort((a,b) => new Date(b.date) - new Date(a.date));
-      renderMaintenanceList(items);
+      await renderMaintenanceList(items);
     });
     document.getElementById('fuelSearch').addEventListener('input', async () => {
       const fuel = (await db.getAll('fuel')).filter(f => f.vehicleId === activeVehicleId).sort((a,b) => new Date(a.date) - new Date(b.date));
@@ -5657,7 +5853,7 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
         if (rm.classList.contains('open')) { closeModal(rm); return; }
         // currencyModal handles its own Escape inside pickCurrency() — closing
         // here would leave the awaiting promise dangling and hang Start Fresh.
-        if (editState.maintenance) { document.getElementById('maintenanceForm').reset(); exitMaintenanceEdit(); }
+        if (editState.maintenance) { document.getElementById('maintenanceForm').reset(); exitMaintenanceEdit(); clearPartsUsedRows(); }
         if (editState.fuel) { document.getElementById('fuelForm').reset(); exitFuelEdit(); }
         if (editState.mods) { document.getElementById('modsForm').reset(); exitModsEdit(); }
         if (editState.parts) { document.getElementById('partsForm').reset(); exitPartsEdit(); }
