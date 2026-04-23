@@ -4,7 +4,7 @@
 // when online AND writes the response back into the cache on every successful
 // local fetch, so an offline reopen after a deploy lands on the latest version
 // the user has seen — not whatever was frozen at install time.
-const CACHE_NAME = 'biteric-jeep-v3';
+const CACHE_NAME = 'biteric-jeep-v4';
 
 const urlsToCache = [
   'jeep.html',
@@ -62,4 +62,23 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+});
+
+// Notification click: focus an existing app tab if one is open; otherwise open
+// jeep.html fresh. Closing the notification is implicit but we call close() so
+// the OS shade reflects the action immediately on platforms that don't auto-
+// dismiss on click.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const clientsList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of clientsList) {
+      if (client.url.includes('jeep.html') && 'focus' in client) {
+        return client.focus();
+      }
+    }
+    if (self.clients.openWindow) {
+      return self.clients.openWindow('jeep.html');
+    }
+  })());
 });

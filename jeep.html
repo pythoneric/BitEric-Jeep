@@ -1006,6 +1006,13 @@
         <button id="importBtn" class="btn" data-i18n="importData">Import Data</button>
         <div id="cacheInfo"></div>
         <div id="installStatus" class="install-status"></div>
+        <h3 data-i18n="notifHeading">Notifications</h3>
+        <p class="stat-sub" data-i18n="notifHint">Get a system notification when a service reminder or document expiration comes due. Works best with the app installed.</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+          <button id="notifEnableBtn" class="btn" type="button" data-i18n="notifEnable">Enable notifications</button>
+          <button id="notifTestBtn" class="btn btn-ghost hidden" type="button" data-i18n="notifTest">Send test notification</button>
+          <div id="notifStatus" class="stat-sub" style="flex-basis: 100%;"></div>
+        </div>
       </div>
     </div>
   </main>
@@ -1576,7 +1583,20 @@
         docIssuedLabel: "Issued",
         docExpiresLabel: "Expires",
         cardDocExpirations: "Document Expirations",
-        noDocExpirations: "No documents expiring soon."
+        noDocExpirations: "No documents expiring soon.",
+        notifHeading: "Notifications",
+        notifHint: "Get a system notification when a service reminder or document expiration comes due. Works best with the app installed.",
+        notifEnable: "Enable notifications",
+        notifEnabled: "Enabled",
+        notifBlocked: "Blocked — update your browser site settings to turn this back on.",
+        notifUnsupported: "This browser doesn't support notifications.",
+        notifTest: "Send test notification",
+        notifTestTitle: "BitEric Jeep",
+        notifTestBody: "Notifications are working. You'll hear from us when something's due.",
+        notifReminderTitle: "{count} service reminder(s) due",
+        notifReminderBody: "{summary}",
+        notifDocTitle: "{count} document(s) expiring",
+        notifDocBody: "{summary}"
       },
       es: {
         appTitle: "BitEric Jeep",
@@ -2029,7 +2049,20 @@
         docIssuedLabel: "Emitido",
         docExpiresLabel: "Vence",
         cardDocExpirations: "Vencimientos de documentos",
-        noDocExpirations: "Ningún documento próximo a vencer."
+        noDocExpirations: "Ningún documento próximo a vencer.",
+        notifHeading: "Notificaciones",
+        notifHint: "Recibe una notificación del sistema cuando un recordatorio de servicio o un documento esté próximo a vencer. Funciona mejor con la app instalada.",
+        notifEnable: "Activar notificaciones",
+        notifEnabled: "Activadas",
+        notifBlocked: "Bloqueadas — ajusta los permisos del sitio en tu navegador para reactivarlas.",
+        notifUnsupported: "Este navegador no admite notificaciones.",
+        notifTest: "Enviar notificación de prueba",
+        notifTestTitle: "BitEric Jeep",
+        notifTestBody: "Las notificaciones funcionan. Te avisaremos cuando algo esté por vencer.",
+        notifReminderTitle: "{count} recordatorio(s) de servicio",
+        notifReminderBody: "{summary}",
+        notifDocTitle: "{count} documento(s) por vencer",
+        notifDocBody: "{summary}"
       }
     };
 
@@ -2223,6 +2256,7 @@
         try { await loadDocs(); } catch (err) { console.error('refresh loadDocs', err); }
         try { refreshInstallStatus(); } catch (err) { console.error('refresh installStatus', err); }
         try { refreshCacheInfo(); } catch (err) { console.error('refresh cacheInfo', err); }
+        try { refreshNotificationStatus(); } catch (err) { console.error('refresh notifStatus', err); }
       } else {
         try { await checkSavedData(); } catch (err) { console.error('refresh checkSavedData', err); }
       }
@@ -5382,6 +5416,150 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
     }
     window.addEventListener('beforeinstallprompt', refreshInstallStatus);
 
+    // Notifications — local (no backend). We fire on load / visibility /
+    // interval; the SW handles notificationclick so the user lands on the app.
+    const NOTIFIED_KEY = 'notifiedAt';
+
+    function refreshNotificationStatus() {
+      const enable = document.getElementById('notifEnableBtn');
+      const test = document.getElementById('notifTestBtn');
+      const status = document.getElementById('notifStatus');
+      if (!enable || !status) return;
+      if (!('Notification' in window)) {
+        enable.classList.add('hidden');
+        test.classList.add('hidden');
+        status.textContent = t('notifUnsupported');
+        return;
+      }
+      const perm = Notification.permission;
+      if (perm === 'granted') {
+        enable.classList.add('hidden');
+        test.classList.remove('hidden');
+        status.textContent = t('notifEnabled');
+      } else if (perm === 'denied') {
+        enable.classList.add('hidden');
+        test.classList.add('hidden');
+        status.textContent = t('notifBlocked');
+      } else {
+        enable.classList.remove('hidden');
+        test.classList.add('hidden');
+        status.textContent = '';
+      }
+    }
+
+    async function showNotification(title, opts) {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      if (navigator.serviceWorker?.ready) {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          return reg.showNotification(title, opts);
+        } catch { /* fall through */ }
+      }
+      try { new Notification(title, opts); } catch (err) { console.error('showNotification', err); }
+    }
+
+    document.getElementById('notifEnableBtn').addEventListener('click', async () => {
+      if (!('Notification' in window)) return;
+      try {
+        await Notification.requestPermission();
+      } catch (err) {
+        console.error('requestPermission', err);
+      }
+      refreshNotificationStatus();
+      if (Notification.permission === 'granted') {
+        showToast(t('notifEnabled'));
+        await notifyDueReminders();
+      }
+    });
+
+    document.getElementById('notifTestBtn').addEventListener('click', async () => {
+      await showNotification(t('notifTestTitle'), {
+        body: t('notifTestBody'),
+        icon: 'icon-192.png',
+        badge: 'icon-192.png',
+        tag: 'notif-test',
+      });
+    });
+
+    async function notifyDueReminders() {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      const vehicles = await db.getAll('vehicles');
+      if (!vehicles.length) return;
+      const allMaint = await db.getAll('maintenance');
+      const allDocs = await db.getAll('documents');
+      const now = new Date();
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+
+      const dueMaint = [];
+      for (const v of vehicles) {
+        const odo = +v.odometer || 0;
+        const vm = allMaint.filter(m => m.vehicleId === v.id && !m.reminderDismissed);
+        for (const m of vm) {
+          let sev = null;
+          if (m.nextDueMiles) {
+            const delta = +m.nextDueMiles - odo;
+            if (delta <= 0) sev = 'overdue';
+            else if (delta <= 500) sev = 'due-soon';
+          }
+          if (m.nextDueDate) {
+            const due = new Date(m.nextDueDate); due.setHours(0, 0, 0, 0);
+            const days = Math.round((due - today) / (24 * 3600 * 1000));
+            if (days <= 0) sev = 'overdue';
+            else if (days <= 30 && sev !== 'overdue') sev = sev || 'due-soon';
+          }
+          if (sev) dueMaint.push({ vehicle: v, m, sev });
+        }
+      }
+
+      const dueDocs = allDocs.map(d => {
+        const v = vehicles.find(x => x.id === d.vehicleId);
+        if (!v) return null;
+        const sev = docSeverity(d.expirationDate, d.reminderDays);
+        return sev.status !== 'active' ? { vehicle: v, d, sev } : null;
+      }).filter(Boolean);
+
+      // Per-item throttle: at most one notification per id per day, so repeated
+      // app visits on the same day don't re-pop a notification the user has
+      // already seen and (implicitly or explicitly) dismissed.
+      const notified = (() => {
+        try { return JSON.parse(localStorage.getItem(NOTIFIED_KEY) || '{}'); } catch { return {}; }
+      })();
+      const oneDayAgo = Date.now() - 24 * 3600 * 1000;
+
+      const freshMaint = dueMaint.filter(x => (notified[`m:${x.m.id}`] || 0) < oneDayAgo);
+      const freshDocs = dueDocs.filter(x => (notified[`d:${x.d.id}`] || 0) < oneDayAgo);
+
+      // Coalesce into at most one maintenance + one documents notification so
+      // we don't spam the shade when several things happen to be due at once.
+      if (freshMaint.length) {
+        const summary = freshMaint.slice(0, 3).map(x => `${x.vehicle.nickname || ''}: ${x.m.type}`).join(' · ');
+        await showNotification(t('notifReminderTitle').replace('{count}', freshMaint.length), {
+          body: t('notifReminderBody').replace('{summary}', summary),
+          icon: 'icon-192.png', badge: 'icon-192.png',
+          tag: 'maintenance-reminders', renotify: false,
+        });
+        for (const x of freshMaint) notified[`m:${x.m.id}`] = Date.now();
+      }
+      if (freshDocs.length) {
+        const summary = freshDocs.slice(0, 3).map(x => `${x.vehicle.nickname || ''}: ${x.d.name}`).join(' · ');
+        await showNotification(t('notifDocTitle').replace('{count}', freshDocs.length), {
+          body: t('notifDocBody').replace('{summary}', summary),
+          icon: 'icon-192.png', badge: 'icon-192.png',
+          tag: 'document-expirations', renotify: false,
+        });
+        for (const x of freshDocs) notified[`d:${x.d.id}`] = Date.now();
+      }
+
+      try { localStorage.setItem(NOTIFIED_KEY, JSON.stringify(notified)); } catch { /* quota, ignore */ }
+    }
+
+    // Fire on visibility return (tab re-focus) and on a 30-min heartbeat while
+    // the tab is open. Initial-load trigger lives in init(), after DB is open.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') { notifyDueReminders().catch(() => {}); }
+    });
+    setInterval(() => { notifyDueReminders().catch(() => {}); }, 30 * 60 * 1000);
+
     // Service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
@@ -5483,6 +5661,10 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       loadDocs();
       refreshInstallStatus();
       refreshCacheInfo();
+      refreshNotificationStatus();
+      // Catch-up notifications: fire once after the app has data loaded so a
+      // returning user sees anything that came due while they were away.
+      notifyDueReminders().catch(err => console.error('notifyDueReminders', err));
     }
 
     // Init
