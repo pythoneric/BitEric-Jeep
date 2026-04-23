@@ -388,6 +388,7 @@
     <button type="button" class="tab" data-tab="maintenance" id="tab-maintenance" role="tab" aria-selected="false" aria-controls="maintenance" tabindex="-1"><span class="tab-icon" aria-hidden="true">🔧</span><span data-i18n="tabMaintenance">Maintenance</span></button>
     <button type="button" class="tab" data-tab="fuel" id="tab-fuel" role="tab" aria-selected="false" aria-controls="fuel" tabindex="-1"><span class="tab-icon" aria-hidden="true">⛽</span><span data-i18n="tabFuel">Fuel</span></button>
     <button type="button" class="tab" data-tab="mods" id="tab-mods" role="tab" aria-selected="false" aria-controls="mods" tabindex="-1"><span class="tab-icon" aria-hidden="true">✨</span><span data-i18n="tabMods">Mods</span></button>
+    <button type="button" class="tab" data-tab="tires" id="tab-tires" role="tab" aria-selected="false" aria-controls="tires" tabindex="-1"><span class="tab-icon" aria-hidden="true">🛞</span><span data-i18n="tabTires">Tires</span></button>
     <button type="button" class="tab" data-tab="trails" id="tab-trails" role="tab" aria-selected="false" aria-controls="trails" tabindex="-1"><span class="tab-icon" aria-hidden="true">🏔</span><span data-i18n="tabTrails">Trails</span></button>
     <button type="button" class="tab" data-tab="parts" id="tab-parts" role="tab" aria-selected="false" aria-controls="parts" tabindex="-1"><span class="tab-icon" aria-hidden="true">📦</span><span data-i18n="tabParts">Parts</span></button>
     <button type="button" class="tab" data-tab="docs" id="tab-docs" role="tab" aria-selected="false" aria-controls="docs" tabindex="-1"><span class="tab-icon" aria-hidden="true">📄</span><span data-i18n="tabDocs">Docs</span></button>
@@ -424,6 +425,14 @@
         </div>
         <div class="card-content">
           <ul id="docExpirations"></ul>
+        </div>
+      </div>
+      <div class="card collapsible" data-section="tires">
+        <div class="card-header">
+          <h3 data-i18n="cardTires">Tires</h3>
+        </div>
+        <div class="card-content">
+          <div id="tiresDashCard"></div>
         </div>
       </div>
       <div class="card collapsible" data-section="vehicle">
@@ -791,6 +800,66 @@
         <div id="modsList"></div>
       </div>
     </div>
+    <div id="tires" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-tires">
+      <div class="card">
+        <h2 data-i18n="tiresTitle">Tire Log</h2>
+        <p class="trail-hint" data-i18n="tiresHint">Track the currently installed set, rotations, and tread wear over time.</p>
+        <div id="activeTireSetCard"></div>
+      </div>
+      <div class="card" id="tireSetFormCard" style="margin-top: 1rem;">
+        <h3 id="tireSetFormHeading" data-i18n="addTireSet">Add tire set</h3>
+        <form id="tireSetForm">
+          <input type="text" id="tireBrand" data-i18n-placeholder="tireBrand" placeholder="Brand (e.g. BFGoodrich)" required>
+          <input type="text" id="tireModel" data-i18n-placeholder="tireModel" placeholder="Model (e.g. All-Terrain T/A KO2)" required>
+          <input type="text" id="tireSize" data-i18n-placeholder="tireSizeLabel" placeholder="Size (e.g. 33x12.50R17)" required>
+          <input type="text" id="tireLoadRange" data-i18n-placeholder="tireLoadRange" placeholder="Load range (optional, e.g. E)">
+          <input type="date" id="tireInstallDate" required>
+          <input type="number" id="tireInstallOdo" min="0" required data-i18n-placeholder="tireInstallOdo" placeholder="Install odometer (mi)">
+          <textarea id="tireNotes" data-i18n-placeholder="tireNotes" placeholder="Notes"></textarea>
+          <input type="file" id="tirePhotoFile" accept="image/*">
+          <img id="tirePhotoPreview" class="photo-preview hidden" alt="">
+          <button type="submit" class="btn" id="tireSetSubmitBtn" data-i18n="addTireSet">Add tire set</button>
+        </form>
+      </div>
+      <div class="card" id="rotationFormCard" style="margin-top: 1rem;">
+        <h3 data-i18n="rotationLog">Rotation Log</h3>
+        <p class="trail-hint" data-i18n="rotationHint">Log each rotation with date, odometer, and pattern.</p>
+        <form id="rotationForm">
+          <input type="date" id="rotDate" required>
+          <input type="number" id="rotOdo" min="0" required data-i18n-placeholder="rotationOdo" placeholder="Odometer at rotation (mi)">
+          <select id="rotPattern" required>
+            <option value="front-rear" data-i18n="rotationPatternFrontRear">Front-to-back</option>
+            <option value="x-pattern" data-i18n="rotationPatternXPattern">X-pattern</option>
+            <option value="five-tire" data-i18n="rotationPatternFiveTire">5-tire (incl. spare)</option>
+            <option value="side-to-side" data-i18n="rotationPatternSideToSide">Side-to-side</option>
+            <option value="other" data-i18n="rotationPatternOther">Other</option>
+          </select>
+          <textarea id="rotNotes" data-i18n-placeholder="rotationNotes" placeholder="Notes (optional)"></textarea>
+          <button type="submit" class="btn" data-i18n="addRotation">Log rotation</button>
+        </form>
+        <ul id="rotationList" class="entry-list"></ul>
+      </div>
+      <div class="card" id="treadFormCard" style="margin-top: 1rem;">
+        <h3 data-i18n="treadLog">Tread Measurements</h3>
+        <p class="trail-hint" data-i18n="treadHint">Measure tread depth in 32nds of an inch at each corner.</p>
+        <form id="treadForm">
+          <input type="date" id="treadDate" required>
+          <input type="number" id="treadOdo" min="0" required data-i18n-placeholder="treadOdo" placeholder="Odometer (mi)">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+            <input type="number" step="0.5" id="treadFL" min="0" max="32" data-i18n-placeholder="treadFL" placeholder="FL (32nds)">
+            <input type="number" step="0.5" id="treadFR" min="0" max="32" data-i18n-placeholder="treadFR" placeholder="FR (32nds)">
+            <input type="number" step="0.5" id="treadRL" min="0" max="32" data-i18n-placeholder="treadRL" placeholder="RL (32nds)">
+            <input type="number" step="0.5" id="treadRR" min="0" max="32" data-i18n-placeholder="treadRR" placeholder="RR (32nds)">
+          </div>
+          <button type="submit" class="btn" data-i18n="addTreadMeasurement">Log measurement</button>
+        </form>
+        <ul id="treadList" class="entry-list"></ul>
+      </div>
+      <div class="card" style="margin-top: 1rem;">
+        <h3 data-i18n="retiredSets">Retired tire sets</h3>
+        <ul id="retiredTiresList" class="entry-list"></ul>
+      </div>
+    </div>
     <div id="trails" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-trails">
       <div class="card">
         <h2 data-i18n="trailsLog">Trail Log</h2>
@@ -1035,7 +1104,7 @@
     <div class="modal-card">
       <h3 id="shortcutsTitle" data-i18n="shortcutsTitle">Keyboard shortcuts</h3>
       <dl>
-        <dt>1–8</dt><dd data-i18n="shortcutTabs">Switch tabs</dd>
+        <dt>1–9</dt><dd data-i18n="shortcutTabs">Switch tabs</dd>
         <dt>Esc</dt><dd data-i18n="shortcutEscape">Cancel edit</dd>
         <dt>?</dt><dd data-i18n="shortcutHelp">Show this help</dd>
       </dl>
@@ -1144,6 +1213,7 @@
         tabMods: "Mods",
         tabParts: "Parts",
         tabTrails: "Trails",
+        tabTires: "Tires",
         tabDocs: "Docs",
         tabSettings: "Settings",
         vehicleCard: "Vehicle",
@@ -1596,7 +1666,54 @@
         notifReminderTitle: "{count} service reminder(s) due",
         notifReminderBody: "{summary}",
         notifDocTitle: "{count} document(s) expiring",
-        notifDocBody: "{summary}"
+        notifDocBody: "{summary}",
+        tiresTitle: "Tire Log",
+        tiresHint: "Track the currently installed set, rotations, and tread wear over time.",
+        noActiveTireSet: "No active tire set. Add one below.",
+        activeTireSet: "Currently installed",
+        addTireSet: "Add tire set",
+        updateTireSet: "Update tire set",
+        editTireSet: "Edit",
+        retireTireSet: "Retire set",
+        tireBrand: "Brand (e.g. BFGoodrich)",
+        tireModel: "Model (e.g. All-Terrain T/A KO2)",
+        tireSizeLabel: "Size (e.g. 33x12.50R17)",
+        tireLoadRange: "Load range (optional, e.g. E)",
+        tireInstallOdo: "Install odometer (mi)",
+        tireNotes: "Notes",
+        rotationLog: "Rotation Log",
+        rotationHint: "Log each rotation with date, odometer, and pattern.",
+        noRotations: "No rotations logged yet.",
+        addRotation: "Log rotation",
+        rotationOdo: "Odometer at rotation (mi)",
+        rotationNotes: "Notes (optional)",
+        rotationPatternFrontRear: "Front-to-back",
+        rotationPatternXPattern: "X-pattern",
+        rotationPatternFiveTire: "5-tire (incl. spare)",
+        rotationPatternSideToSide: "Side-to-side",
+        rotationPatternOther: "Other",
+        treadLog: "Tread Measurements",
+        treadHint: "Measure tread depth in 32nds of an inch at each corner.",
+        noTreadMeasurements: "No tread measurements logged yet.",
+        addTreadMeasurement: "Log measurement",
+        treadOdo: "Odometer (mi)",
+        treadFL: "FL (32nds)",
+        treadFR: "FR (32nds)",
+        treadRL: "RL (32nds)",
+        treadRR: "RR (32nds)",
+        retiredSets: "Retired tire sets",
+        noRetiredSets: "No retired tire sets.",
+        retireReasonPrompt: "Why retiring this set? (worn / damaged / upgraded — optional)",
+        unretireSet: "Reinstall",
+        cardTires: "Tires",
+        tiresMilesOnSet: "Miles on set: {miles}",
+        tiresLastRotation: "Last rotation: {date} @ {odo} mi",
+        tiresNoRotations: "No rotations logged.",
+        tiresLowestTread: "Lowest tread: {val}/32",
+        tiresNoTread: "No tread measurements.",
+        tiresLowTreadWarn: "⚠️ Low tread — consider replacement",
+        tiresRotationOverdue: "⚠️ Rotation overdue (>{miles} mi since last)",
+        savedInfoTires: "tires"
       },
       es: {
         appTitle: "BitEric Jeep",
@@ -1610,6 +1727,7 @@
         tabMods: "Mods",
         tabParts: "Piezas",
         tabTrails: "Rutas",
+        tabTires: "Llantas",
         tabDocs: "Docs",
         tabSettings: "Configuración",
         vehicleCard: "Vehículo",
@@ -2062,7 +2180,54 @@
         notifReminderTitle: "{count} recordatorio(s) de servicio",
         notifReminderBody: "{summary}",
         notifDocTitle: "{count} documento(s) por vencer",
-        notifDocBody: "{summary}"
+        notifDocBody: "{summary}",
+        tiresTitle: "Registro de llantas",
+        tiresHint: "Lleva el control del juego instalado, las rotaciones y el desgaste de la banda.",
+        noActiveTireSet: "Sin juego activo. Agrega uno abajo.",
+        activeTireSet: "Actualmente instalado",
+        addTireSet: "Agregar juego",
+        updateTireSet: "Actualizar juego",
+        editTireSet: "Editar",
+        retireTireSet: "Retirar juego",
+        tireBrand: "Marca (ej. BFGoodrich)",
+        tireModel: "Modelo (ej. All-Terrain T/A KO2)",
+        tireSizeLabel: "Medida (ej. 33x12.50R17)",
+        tireLoadRange: "Rango de carga (opcional, ej. E)",
+        tireInstallOdo: "Odómetro al instalar (mi)",
+        tireNotes: "Notas",
+        rotationLog: "Registro de rotaciones",
+        rotationHint: "Registra cada rotación con fecha, odómetro y patrón.",
+        noRotations: "Aún no hay rotaciones registradas.",
+        addRotation: "Registrar rotación",
+        rotationOdo: "Odómetro al rotar (mi)",
+        rotationNotes: "Notas (opcional)",
+        rotationPatternFrontRear: "Delantera-trasera",
+        rotationPatternXPattern: "Patrón en X",
+        rotationPatternFiveTire: "5 llantas (incl. repuesto)",
+        rotationPatternSideToSide: "Lado a lado",
+        rotationPatternOther: "Otro",
+        treadLog: "Mediciones de banda",
+        treadHint: "Mide la profundidad de banda en 32avos de pulgada en cada esquina.",
+        noTreadMeasurements: "Aún no hay mediciones.",
+        addTreadMeasurement: "Registrar medición",
+        treadOdo: "Odómetro (mi)",
+        treadFL: "FL (32avos)",
+        treadFR: "FR (32avos)",
+        treadRL: "RL (32avos)",
+        treadRR: "RR (32avos)",
+        retiredSets: "Juegos retirados",
+        noRetiredSets: "Sin juegos retirados.",
+        retireReasonPrompt: "¿Motivo del retiro? (desgaste / daño / upgrade — opcional)",
+        unretireSet: "Reinstalar",
+        cardTires: "Llantas",
+        tiresMilesOnSet: "Millas en el juego: {miles}",
+        tiresLastRotation: "Última rotación: {date} @ {odo} mi",
+        tiresNoRotations: "Sin rotaciones registradas.",
+        tiresLowestTread: "Banda más baja: {val}/32",
+        tiresNoTread: "Sin mediciones.",
+        tiresLowTreadWarn: "⚠️ Banda baja — considera reemplazo",
+        tiresRotationOverdue: "⚠️ Rotación atrasada (>{miles} mi desde la última)",
+        savedInfoTires: "llantas"
       }
     };
 
@@ -2075,7 +2240,7 @@
     let activeVehicleId = localStorage.getItem('activeVehicleId');
     let lastTab = localStorage.getItem('lastTab') || 'dashboard';
 
-    const DB_VERSION = 4;
+    const DB_VERSION = 5;
 
     // IndexedDB wrapper
     class DB {
@@ -2197,10 +2362,11 @@
       { name: 'mods', keyPath: 'id', indexes: [{ name: 'vehicleId', keyPath: 'vehicleId' }] },
       { name: 'parts', keyPath: 'id', indexes: [{ name: 'vehicleId', keyPath: 'vehicleId' }] },
       { name: 'trails', keyPath: 'id', indexes: [{ name: 'vehicleId', keyPath: 'vehicleId' }] },
-      { name: 'documents', keyPath: 'id', indexes: [{ name: 'vehicleId', keyPath: 'vehicleId' }] }
+      { name: 'documents', keyPath: 'id', indexes: [{ name: 'vehicleId', keyPath: 'vehicleId' }] },
+      { name: 'tires', keyPath: 'id', indexes: [{ name: 'vehicleId', keyPath: 'vehicleId' }] }
     ];
     const ALL_STORES = stores.map(s => s.name);
-    const TAB_ORDER = ['dashboard', 'maintenance', 'fuel', 'mods', 'trails', 'parts', 'docs', 'settings'];
+    const TAB_ORDER = ['dashboard', 'maintenance', 'fuel', 'mods', 'tires', 'trails', 'parts', 'docs', 'settings'];
 
     // Seed data
     // UI functions
@@ -2254,6 +2420,7 @@
         try { await loadParts(); } catch (err) { console.error('refresh loadParts', err); }
         try { await loadTrails(); } catch (err) { console.error('refresh loadTrails', err); }
         try { await loadDocs(); } catch (err) { console.error('refresh loadDocs', err); }
+        try { await loadTires(); } catch (err) { console.error('refresh loadTires', err); }
         try { refreshInstallStatus(); } catch (err) { console.error('refresh installStatus', err); }
         try { refreshCacheInfo(); } catch (err) { console.error('refresh cacheInfo', err); }
         try { refreshNotificationStatus(); } catch (err) { console.error('refresh notifStatus', err); }
@@ -2365,6 +2532,17 @@
           const oneYear = new Date(); oneYear.setFullYear(oneYear.getFullYear() + 1);
           document.getElementById('docExpirationDate').value = oneYear.toISOString().split('T')[0];
         }
+      } else if (tab === 'tires') {
+        // Default date + odometer for rotation / tread / install forms — saves
+        // typing when logging today's measurement at the current odo.
+        for (const id of ['tireInstallDate', 'rotDate', 'treadDate']) {
+          const el = document.getElementById(id);
+          if (el && !el.value) el.value = today;
+        }
+        for (const id of ['tireInstallOdo', 'rotOdo', 'treadOdo']) {
+          const el = document.getElementById(id);
+          if (el && !el.value && odo) el.value = odo;
+        }
       }
     }
 
@@ -2384,6 +2562,7 @@
       else if (tab === 'parts') loadParts();
       else if (tab === 'trails') loadTrails();
       else if (tab === 'docs') loadDocs();
+      else if (tab === 'tires') loadTires();
       else if (tab === 'dashboard') loadDashboard();
       else if (tab === 'settings') restoreDraft('vehicleForm');
       autofillFormDefaults(tab);
@@ -2551,7 +2730,7 @@
       toastTimeoutId = setTimeout(hideToast, ms);
     }
     // Edit-mode tracking per form
-    const editState = { maintenance: null, fuel: null, mods: null, parts: null, trails: null, docs: null, trailsCreatedAt: null };
+    const editState = { maintenance: null, fuel: null, mods: null, parts: null, trails: null, docs: null, tires: null, trailsCreatedAt: null };
     function setEditBanner(formEl, labelText, onCancel) {
       let banner = formEl.querySelector('.edit-banner');
       if (!labelText) {
@@ -2782,6 +2961,33 @@
             return `<li class="reminder-item ${sev.status}"><strong>${escHtml(t(typeKey))}</strong>: ${escHtml(d.name)} — ${escHtml(docSeverityLabel(sev))}</li>`;
           }).join('')
         : `<li>${escHtml(t('noDocExpirations'))}</li>`;
+
+      // Tires card — summarize the currently installed set: miles on tires,
+      // last rotation, lowest tread. Surfaces here so users see at-a-glance
+      // without opening the Tires tab.
+      const tiresDash = document.getElementById('tiresDashCard');
+      const activeTire = (await db.getAll('tires'))
+        .filter(x => x.vehicleId === activeVehicleId && !x.retiredDate)
+        .sort((a, b) => new Date(b.installDate || 0) - new Date(a.installDate || 0))[0] || null;
+      if (!activeTire) {
+        tiresDash.innerHTML = `<p class="stat-sub">${escHtml(t('noActiveTireSet'))}</p>`;
+      } else {
+        const milesOnSet = Math.max(0, currentOdometer - (+activeTire.installOdometer || 0));
+        const lastRot = lastRotation(activeTire.rotations);
+        const low = lowestTread(activeTire.treadMeasurements);
+        const warnBits = [];
+        if (low != null && low <= 4) warnBits.push(`<p class="stat-sub" style="color:#dc2626;">${escHtml(t('tiresLowTreadWarn'))}</p>`);
+        if (lastRot && (currentOdometer - (+lastRot.odometer || 0)) > 7500) {
+          warnBits.push(`<p class="stat-sub" style="color:#d97706;">${escHtml(t('tiresRotationOverdue').replace('{miles}', '7500'))}</p>`);
+        }
+        tiresDash.innerHTML = `
+          <p><strong>${escHtml(activeTire.brand)} ${escHtml(activeTire.model)}</strong> — ${escHtml(activeTire.size)}</p>
+          <p class="stat-sub">${escHtml(t('tiresMilesOnSet').replace('{miles}', milesOnSet.toLocaleString()))}</p>
+          ${lastRot ? `<p class="stat-sub">${escHtml(t('tiresLastRotation').replace('{date}', lastRot.date).replace('{odo}', (+lastRot.odometer || 0).toLocaleString()))}</p>` : `<p class="stat-sub">${escHtml(t('tiresNoRotations'))}</p>`}
+          ${low != null ? `<p class="stat-sub">${escHtml(t('tiresLowestTread').replace('{val}', low))}</p>` : `<p class="stat-sub">${escHtml(t('tiresNoTread'))}</p>`}
+          ${warnBits.join('')}
+        `;
+      }
 
       // Budget card (this month + year)
       const monthKey = currentDate.slice(0, 7);
@@ -4082,7 +4288,7 @@
       if (!confirm(prompt)) return;
       // cascade: delete this vehicle's maintenance, fuel, mods, parts, trails —
       // one transaction per store instead of one per row.
-      for (const store of ['maintenance', 'fuel', 'mods', 'parts', 'trails', 'documents']) {
+      for (const store of ['maintenance', 'fuel', 'mods', 'parts', 'trails', 'documents', 'tires']) {
         const items = (await db.getAll(store)).filter(x => x.vehicleId === activeVehicleId);
         await db.deleteAll(store, items.map(x => x.id));
       }
@@ -4779,6 +4985,322 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       }
     });
 
+    // Tires — first-class tire set log with nested rotations + tread
+    // measurements. One active set per vehicle at a time (the UI treats any
+    // non-retired set as editable); retired sets stay on record for history.
+    let tirePhotoDataUrl = null;
+    document.getElementById('tirePhotoFile').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      const preview = document.getElementById('tirePhotoPreview');
+      if (!file) { tirePhotoDataUrl = null; preview.classList.add('hidden'); preview.removeAttribute('src'); return; }
+      tirePhotoDataUrl = await compressImage(file);
+      preview.src = tirePhotoDataUrl;
+      preview.classList.remove('hidden');
+    });
+
+    async function getActiveTireSet() {
+      const all = await db.getAll('tires');
+      return all.filter(t => t.vehicleId === activeVehicleId && !t.retiredDate)
+        .sort((a, b) => new Date(b.installDate || 0) - new Date(a.installDate || 0))[0] || null;
+    }
+
+    function lowestTread(measurements) {
+      if (!measurements || !measurements.length) return null;
+      const latest = measurements.slice().sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))[0];
+      const corners = [latest.fl, latest.fr, latest.rl, latest.rr].map(v => +v).filter(v => Number.isFinite(v) && v >= 0);
+      return corners.length ? Math.min(...corners) : null;
+    }
+
+    function lastRotation(rotations) {
+      if (!rotations || !rotations.length) return null;
+      return rotations.slice().sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))[0];
+    }
+
+    async function loadTires() {
+      const active = await getActiveTireSet();
+      const activeCard = document.getElementById('activeTireSetCard');
+      const rotationCard = document.getElementById('rotationFormCard');
+      const treadCard = document.getElementById('treadFormCard');
+      const heading = document.getElementById('tireSetFormHeading');
+      const submitBtn = document.getElementById('tireSetSubmitBtn');
+
+      // Rotations + tread forms only make sense once a set is installed; hide
+      // them until there's one to attach entries to.
+      rotationCard.style.display = active ? '' : 'none';
+      treadCard.style.display = active ? '' : 'none';
+
+      if (active) {
+        const vehicle = (await db.getAll('vehicles')).find(v => v.id === activeVehicleId);
+        const currentOdo = +vehicle?.odometer || +active.installOdometer || 0;
+        const milesOnSet = Math.max(0, currentOdo - (+active.installOdometer || 0));
+        const lastRot = lastRotation(active.rotations);
+        const low = lowestTread(active.treadMeasurements);
+        const warnings = [];
+        if (low != null && low <= 4) warnings.push(`<p class="trail-hint" style="color:#dc2626;">${escHtml(t('tiresLowTreadWarn'))}</p>`);
+        if (lastRot) {
+          const sinceRot = currentOdo - (+lastRot.odometer || 0);
+          if (sinceRot > 7500) warnings.push(`<p class="trail-hint" style="color:#d97706;">${escHtml(t('tiresRotationOverdue').replace('{miles}', '7500'))}</p>`);
+        }
+        const photoBit = active.photo ? `<img src="${escHtml(active.photo)}" class="photo-thumb" alt="" style="float: right; margin-left: 0.5rem;">` : '';
+        activeCard.innerHTML = `
+          ${photoBit}
+          <p><strong>${escHtml(t('activeTireSet'))}</strong></p>
+          <p><strong>${escHtml(active.brand)} ${escHtml(active.model)}</strong> — ${escHtml(active.size)}${active.loadRange ? ' · LR ' + escHtml(active.loadRange) : ''}</p>
+          <p class="stat-sub">${escHtml(t('tiresMilesOnSet').replace('{miles}', milesOnSet.toLocaleString()))}</p>
+          ${lastRot ? `<p class="stat-sub">${escHtml(t('tiresLastRotation').replace('{date}', lastRot.date).replace('{odo}', (+lastRot.odometer || 0).toLocaleString()))}</p>` : `<p class="stat-sub">${escHtml(t('tiresNoRotations'))}</p>`}
+          ${low != null ? `<p class="stat-sub">${escHtml(t('tiresLowestTread').replace('{val}', low))}</p>` : `<p class="stat-sub">${escHtml(t('tiresNoTread'))}</p>`}
+          ${warnings.join('')}
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-ghost" id="editActiveTireBtn">${escHtml(t('editTireSet'))}</button>
+            <button type="button" class="btn btn-danger-ghost" id="retireActiveTireBtn">${escHtml(t('retireTireSet'))}</button>
+          </div>
+        `;
+        document.getElementById('editActiveTireBtn').onclick = () => startEditTireSet(active);
+        document.getElementById('retireActiveTireBtn').onclick = () => retireTireSet(active);
+        renderRotationList(active);
+        renderTreadList(active);
+        heading.textContent = editState.tires === active.id ? t('updateTireSet') : t('addTireSet');
+        submitBtn.textContent = editState.tires === active.id ? t('updateTireSet') : t('addTireSet');
+      } else {
+        activeCard.innerHTML = `<p class="empty-state">${escHtml(t('noActiveTireSet'))}</p>`;
+        heading.textContent = t('addTireSet');
+        submitBtn.textContent = t('addTireSet');
+      }
+      await renderRetiredTires();
+      if (!editState.tires) restoreDraft('tireSetForm');
+    }
+
+    function startEditTireSet(tire) {
+      editState.tires = tire.id;
+      document.getElementById('tireBrand').value = tire.brand || '';
+      document.getElementById('tireModel').value = tire.model || '';
+      document.getElementById('tireSize').value = tire.size || '';
+      document.getElementById('tireLoadRange').value = tire.loadRange || '';
+      document.getElementById('tireInstallDate').value = tire.installDate || '';
+      document.getElementById('tireInstallOdo').value = tire.installOdometer != null ? tire.installOdometer : '';
+      document.getElementById('tireNotes').value = tire.notes || '';
+      tirePhotoDataUrl = tire.photo || null;
+      const preview = document.getElementById('tirePhotoPreview');
+      if (tire.photo) { preview.src = tire.photo; preview.classList.remove('hidden'); }
+      else { preview.classList.add('hidden'); preview.removeAttribute('src'); }
+      document.getElementById('tireSetFormHeading').textContent = t('updateTireSet');
+      document.getElementById('tireSetSubmitBtn').textContent = t('updateTireSet');
+      document.getElementById('tireSetFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function exitTiresEdit() {
+      editState.tires = null;
+      document.getElementById('tireSetFormHeading').textContent = t('addTireSet');
+      document.getElementById('tireSetSubmitBtn').textContent = t('addTireSet');
+    }
+
+    async function retireTireSet(tire) {
+      const reason = prompt(t('retireReasonPrompt')) ?? null;
+      const vehicle = (await db.getAll('vehicles')).find(v => v.id === activeVehicleId);
+      const retiredOdometer = +vehicle?.odometer || +tire.installOdometer || 0;
+      const updated = { ...tire, retiredDate: new Date().toISOString().split('T')[0], retiredOdometer, retiredReason: reason, updatedAt: new Date() };
+      await db.put('tires', updated);
+      await loadTires();
+      await loadDashboard();
+      showToast(t('savedMsg'));
+    }
+
+    async function renderRetiredTires() {
+      const retired = (await db.getAll('tires')).filter(x => x.vehicleId === activeVehicleId && x.retiredDate)
+        .sort((a, b) => new Date(b.retiredDate || 0) - new Date(a.retiredDate || 0));
+      const list = document.getElementById('retiredTiresList');
+      if (!retired.length) { list.innerHTML = `<li class="empty-state">${escHtml(t('noRetiredSets'))}</li>`; return; }
+      list.innerHTML = retired.map(r => {
+        const miles = Math.max(0, (+r.retiredOdometer || 0) - (+r.installOdometer || 0));
+        const reasonBit = r.retiredReason ? ` · ${escHtml(r.retiredReason)}` : '';
+        return `<li>
+          <span class="entry-main">${escHtml(r.brand)} ${escHtml(r.model)} (${escHtml(r.size)}) — ${escHtml(r.installDate || '')} → ${escHtml(r.retiredDate || '')} · ${miles.toLocaleString()} mi${reasonBit}</span>
+          <span class="row-actions">
+            <button type="button" class="btn btn-ghost unretire-tire-btn" data-id="${escHtml(r.id)}">${escHtml(t('unretireSet'))}</button>
+            <button type="button" class="del-btn del-tire-btn" data-id="${escHtml(r.id)}" aria-label="${escHtml(t('deleteBtn'))}" title="${escHtml(t('deleteBtn'))}">✕</button>
+          </span>
+        </li>`;
+      }).join('');
+    }
+
+    document.getElementById('retiredTiresList').addEventListener('click', async (e) => {
+      const unEl = e.target.closest('.unretire-tire-btn');
+      if (unEl) {
+        const items = await db.getAll('tires');
+        const tire = items.find(x => x.id === unEl.dataset.id);
+        if (!tire) return;
+        const updated = { ...tire, retiredDate: null, retiredOdometer: null, retiredReason: null, updatedAt: new Date() };
+        await db.put('tires', updated);
+        await loadTires();
+        await loadDashboard();
+        showToast(t('savedMsg'));
+        return;
+      }
+      const delEl = e.target.closest('.del-tire-btn');
+      if (delEl) {
+        await confirmDelete('tires', delEl.dataset.id, loadTires);
+      }
+    });
+
+    document.getElementById('tireSetForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!activeVehicleId) return;
+      const form = e.currentTarget;
+      if (editState.tires) {
+        const items = await db.getAll('tires');
+        const existing = items.find(x => x.id === editState.tires);
+        if (!existing) return;
+        const updated = {
+          ...existing,
+          brand: document.getElementById('tireBrand').value.trim(),
+          model: document.getElementById('tireModel').value.trim(),
+          size: document.getElementById('tireSize').value.trim(),
+          loadRange: document.getElementById('tireLoadRange').value.trim() || null,
+          installDate: document.getElementById('tireInstallDate').value,
+          installOdometer: +document.getElementById('tireInstallOdo').value || 0,
+          notes: document.getElementById('tireNotes').value.trim() || null,
+          photo: tirePhotoDataUrl,
+          updatedAt: new Date()
+        };
+        await db.put('tires', updated);
+      } else {
+        const tire = {
+          id: crypto.randomUUID(),
+          vehicleId: activeVehicleId,
+          brand: document.getElementById('tireBrand').value.trim(),
+          model: document.getElementById('tireModel').value.trim(),
+          size: document.getElementById('tireSize').value.trim(),
+          loadRange: document.getElementById('tireLoadRange').value.trim() || null,
+          installDate: document.getElementById('tireInstallDate').value,
+          installOdometer: +document.getElementById('tireInstallOdo').value || 0,
+          notes: document.getElementById('tireNotes').value.trim() || null,
+          photo: tirePhotoDataUrl,
+          retiredDate: null, retiredOdometer: null, retiredReason: null,
+          rotations: [],
+          treadMeasurements: [],
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        await db.add('tires', tire);
+      }
+      form.reset();
+      tirePhotoDataUrl = null;
+      const pv = document.getElementById('tirePhotoPreview');
+      pv.classList.add('hidden'); pv.removeAttribute('src');
+      exitTiresEdit();
+      await loadTires();
+      await loadDashboard();
+      showToast(t('savedMsg'));
+    });
+
+    // Rotation log — nested inside the active tire set record.
+    document.getElementById('rotationForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const active = await getActiveTireSet();
+      if (!active) return;
+      const items = await db.getAll('tires');
+      const tire = items.find(x => x.id === active.id);
+      if (!tire) return;
+      const entry = {
+        id: crypto.randomUUID(),
+        date: document.getElementById('rotDate').value,
+        odometer: +document.getElementById('rotOdo').value || 0,
+        pattern: document.getElementById('rotPattern').value,
+        notes: document.getElementById('rotNotes').value.trim() || null
+      };
+      const rotations = Array.isArray(tire.rotations) ? tire.rotations.concat(entry) : [entry];
+      await db.put('tires', { ...tire, rotations, updatedAt: new Date() });
+      document.getElementById('rotationForm').reset();
+      await loadTires();
+      await loadDashboard();
+      showToast(t('savedMsg'));
+    });
+
+    function renderRotationList(tire) {
+      const list = document.getElementById('rotationList');
+      const rotations = (tire.rotations || []).slice().sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+      if (!rotations.length) { list.innerHTML = `<li class="empty-state">${escHtml(t('noRotations'))}</li>`; return; }
+      list.innerHTML = rotations.map(r => {
+        const patternLabel = t('rotationPattern' + (r.pattern ? (r.pattern.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')) : 'Other'));
+        const notesBit = r.notes ? ` · ${escHtml(r.notes)}` : '';
+        return `<li>
+          <span class="entry-main">${escHtml(r.date || '')} @ ${(+r.odometer || 0).toLocaleString()} mi · ${escHtml(patternLabel)}${notesBit}</span>
+          <span class="row-actions">
+            <button type="button" class="del-btn del-rot-btn" data-id="${escHtml(r.id)}" aria-label="${escHtml(t('deleteBtn'))}" title="${escHtml(t('deleteBtn'))}">✕</button>
+          </span>
+        </li>`;
+      }).join('');
+    }
+
+    document.getElementById('rotationList').addEventListener('click', async (e) => {
+      const delEl = e.target.closest('.del-rot-btn');
+      if (!delEl) return;
+      if (!confirm(t('confirmDelete'))) return;
+      const active = await getActiveTireSet();
+      if (!active) return;
+      const items = await db.getAll('tires');
+      const tire = items.find(x => x.id === active.id);
+      if (!tire) return;
+      const rotations = (tire.rotations || []).filter(r => r.id !== delEl.dataset.id);
+      await db.put('tires', { ...tire, rotations, updatedAt: new Date() });
+      await loadTires();
+      await loadDashboard();
+    });
+
+    // Tread measurements — same nesting pattern as rotations.
+    document.getElementById('treadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const active = await getActiveTireSet();
+      if (!active) return;
+      const items = await db.getAll('tires');
+      const tire = items.find(x => x.id === active.id);
+      if (!tire) return;
+      const n = id => { const v = document.getElementById(id).value; return v === '' ? null : +v; };
+      const entry = {
+        id: crypto.randomUUID(),
+        date: document.getElementById('treadDate').value,
+        odometer: +document.getElementById('treadOdo').value || 0,
+        fl: n('treadFL'), fr: n('treadFR'), rl: n('treadRL'), rr: n('treadRR'),
+        unit: '32nds'
+      };
+      const treadMeasurements = Array.isArray(tire.treadMeasurements) ? tire.treadMeasurements.concat(entry) : [entry];
+      await db.put('tires', { ...tire, treadMeasurements, updatedAt: new Date() });
+      document.getElementById('treadForm').reset();
+      await loadTires();
+      await loadDashboard();
+      showToast(t('savedMsg'));
+    });
+
+    function renderTreadList(tire) {
+      const list = document.getElementById('treadList');
+      const measurements = (tire.treadMeasurements || []).slice().sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+      if (!measurements.length) { list.innerHTML = `<li class="empty-state">${escHtml(t('noTreadMeasurements'))}</li>`; return; }
+      list.innerHTML = measurements.map(m => {
+        const corners = [m.fl, m.fr, m.rl, m.rr].map(v => v == null || v === '' ? '—' : `${+v}/32`);
+        return `<li>
+          <span class="entry-main">${escHtml(m.date || '')} @ ${(+m.odometer || 0).toLocaleString()} mi · FL ${corners[0]} · FR ${corners[1]} · RL ${corners[2]} · RR ${corners[3]}</span>
+          <span class="row-actions">
+            <button type="button" class="del-btn del-tread-btn" data-id="${escHtml(m.id)}" aria-label="${escHtml(t('deleteBtn'))}" title="${escHtml(t('deleteBtn'))}">✕</button>
+          </span>
+        </li>`;
+      }).join('');
+    }
+
+    document.getElementById('treadList').addEventListener('click', async (e) => {
+      const delEl = e.target.closest('.del-tread-btn');
+      if (!delEl) return;
+      if (!confirm(t('confirmDelete'))) return;
+      const active = await getActiveTireSet();
+      if (!active) return;
+      const items = await db.getAll('tires');
+      const tire = items.find(x => x.id === active.id);
+      if (!tire) return;
+      const treadMeasurements = (tire.treadMeasurements || []).filter(m => m.id !== delEl.dataset.id);
+      await db.put('tires', { ...tire, treadMeasurements, updatedAt: new Date() });
+      await loadTires();
+      await loadDashboard();
+    });
+
     // Settings
     // Bump when the data shape changes meaningfully — import uses this to warn
     // if a backup was made with a newer or older schema than the current app.
@@ -4821,7 +5343,8 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
         mods: stripPhoto(await db.getAll('mods')),
         parts: await db.getAll('parts'),
         trails: await db.getAll('trails'),
-        documents: stripPhoto(await db.getAll('documents'))
+        documents: stripPhoto(await db.getAll('documents')),
+        tires: stripPhoto(await db.getAll('tires'))
       };
       const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -4841,7 +5364,7 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       for (const v of data.vehicles) {
         if (!v || typeof v !== 'object' || typeof v.id !== 'string' || typeof v.nickname !== 'string') return 'invalid vehicle entry';
       }
-      for (const key of ['maintenance', 'fuel', 'mods', 'parts', 'trails', 'documents']) {
+      for (const key of ['maintenance', 'fuel', 'mods', 'parts', 'trails', 'documents', 'tires']) {
         if (data[key] !== undefined && !Array.isArray(data[key])) return `${key} must be an array`;
         for (const it of data[key] || []) {
           if (!it || typeof it !== 'object' || typeof it.id !== 'string') return `invalid ${key} entry (missing id)`;
@@ -4851,7 +5374,7 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       // merged file and will render blank on every tab. Block rather than
       // silently import garbage.
       const vehicleIds = new Set(data.vehicles.map(v => v.id));
-      for (const key of ['maintenance', 'fuel', 'mods', 'parts', 'trails', 'documents']) {
+      for (const key of ['maintenance', 'fuel', 'mods', 'parts', 'trails', 'documents', 'tires']) {
         for (const it of data[key] || []) {
           if (it.vehicleId && !vehicleIds.has(it.vehicleId)) return 'vehicleId mismatch';
         }
@@ -4884,6 +5407,7 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       try { await loadParts(); } catch (err) { console.error('selectVehicleChip loadParts', err); }
       try { await loadTrails(); } catch (err) { console.error('selectVehicleChip loadTrails', err); }
       try { await loadDocs(); } catch (err) { console.error('selectVehicleChip loadDocs', err); }
+      try { await loadTires(); } catch (err) { console.error('selectVehicleChip loadTires', err); }
     }
     document.getElementById('vehicleSwitcher').addEventListener('click', (e) => {
       const chip = e.target.closest('.vehicle-chip');
@@ -4991,11 +5515,11 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       const banner = document.getElementById('savedDataBanner');
       const info = document.getElementById('savedDataInfo');
       if (!banner || !info) return;
-      const [vehicles, maintenance, fuel, mods, parts, documents] = await Promise.all([
+      const [vehicles, maintenance, fuel, mods, parts, documents, tires] = await Promise.all([
         db.getAll('vehicles'), db.getAll('maintenance'), db.getAll('fuel'),
-        db.getAll('mods'), db.getAll('parts'), db.getAll('documents')
+        db.getAll('mods'), db.getAll('parts'), db.getAll('documents'), db.getAll('tires')
       ]);
-      const entryCount = maintenance.length + fuel.length + mods.length + parts.length + documents.length;
+      const entryCount = maintenance.length + fuel.length + mods.length + parts.length + documents.length + tires.length;
       // Show banner only if there's meaningful history: real user entries, a
       // custom-added vehicle beyond the two seeds, or a prior session recorded
       // in localStorage.
@@ -5011,6 +5535,7 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       if (mods.length) bits.push(`${mods.length} ${t('savedInfoMods')}`);
       if (parts.length) bits.push(`${parts.length} ${t('savedInfoParts')}`);
       if (documents.length) bits.push(`${documents.length} ${t('savedInfoDocs')}`);
+      if (tires.length) bits.push(`${tires.length} ${t('savedInfoTires')}`);
       info.textContent = bits.join(' · ');
       banner.classList.remove('hidden');
     }
@@ -5023,7 +5548,8 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
         mods: await db.getAll('mods'),
         parts: await db.getAll('parts'),
         trails: await db.getAll('trails'),
-        documents: await db.getAll('documents')
+        documents: await db.getAll('documents'),
+        tires: await db.getAll('tires')
       };
       const vehicle = data.vehicles.find(v => v.id === activeVehicleId) || data.vehicles[0];
       const slug = (vehicle?.nickname || 'all').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'all';
@@ -5105,13 +5631,13 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       }
     }, { passive: true });
 
-    // Keyboard: 1-8 switches tabs, ? opens help, Escape cancels edit / closes modals
+    // Keyboard: 1-9 switches tabs, ? opens help, Escape cancels edit / closes modals
     document.addEventListener('keydown', (e) => {
       if (document.getElementById('loader').style.display !== 'none') return;
       const tag = document.activeElement?.tagName;
       const inField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
       if (!inField && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        if (/^[1-8]$/.test(e.key)) {
+        if (/^[1-9]$/.test(e.key)) {
           e.preventDefault();
           switchTab(TAB_ORDER[+e.key - 1]);
           return;
@@ -5148,6 +5674,13 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
           const pv = document.getElementById('docPhotoPreview');
           pv.classList.add('hidden'); pv.removeAttribute('src');
           exitDocsEdit();
+        }
+        if (editState.tires) {
+          document.getElementById('tireSetForm').reset();
+          tirePhotoDataUrl = null;
+          const pv = document.getElementById('tirePhotoPreview');
+          pv.classList.add('hidden'); pv.removeAttribute('src');
+          exitTiresEdit();
         }
       }
     });
@@ -5224,6 +5757,7 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       await db.addAll('parts', data.parts || []);
       await db.addAll('trails', data.trails || []);
       await db.addAll('documents', data.documents || []);
+      await db.addAll('tires', data.tires || []);
       // Restore user-preference settings if the backup carried them. Matches
       // the export side symmetrically so a round-trip is truly lossless.
       let restoredLang = null;
@@ -5243,6 +5777,7 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       try { await loadParts(); } catch (err) { console.error('import loadParts', err); }
       try { await loadTrails(); } catch (err) { console.error('import loadTrails', err); }
       try { await loadDocs(); } catch (err) { console.error('import loadDocs', err); }
+      try { await loadTires(); } catch (err) { console.error('import loadTires', err); }
       // Reapply restored language last — sweeps i18n-tagged DOM elements
       // so labels reflect the backup's language.
       if (restoredLang) setLang(restoredLang);
@@ -5649,7 +6184,7 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       setTheme(theme);
       // Wire draft auto-save once — listeners are idempotent but persist()
       // captures the form by id at call time so one-time wiring is enough.
-      ['vehicleForm', 'maintenanceForm', 'fuelForm', 'modsForm', 'trailsForm', 'partsForm', 'docsForm']
+      ['vehicleForm', 'maintenanceForm', 'fuelForm', 'modsForm', 'trailsForm', 'partsForm', 'docsForm', 'tireSetForm']
         .forEach(wireDraftAutoSave);
       await loadVehicles();
       switchTab(lastTab);
@@ -5659,6 +6194,7 @@ ${mods.map(m => `<tr><td>${escHtml(m.date)}</td><td>${escHtml(m.category)}</td><
       loadParts();
       loadTrails();
       loadDocs();
+      loadTires();
       refreshInstallStatus();
       refreshCacheInfo();
       refreshNotificationStatus();

@@ -1,14 +1,15 @@
 import { test, expect } from '@playwright/test';
 import { startFresh, loadDemoTruck, switchTab } from './helpers.js';
 
-test('Service Reminders, Document Expirations, and Vehicle cards render at the top in order', async ({ page }) => {
+test('Reminders, Doc Expirations, Tires, and Vehicle cards render at the top in order', async ({ page }) => {
   await startFresh(page);
   const cards = await page.locator('#dashboard > .card, #dashboard > .g3, #dashboard > .g2').evaluateAll((els) =>
     els.map((e) => e.querySelector('h2, h3')?.textContent?.trim() || ''),
   );
   expect(cards[0]).toMatch(/Service Reminders|Recordatorios/);
   expect(cards[1]).toMatch(/Document Expirations|Vencimientos/);
-  expect(cards[2]).toMatch(/Vehicle|Vehículo/);
+  expect(cards[2]).toMatch(/Tires|Llantas/);
+  expect(cards[3]).toMatch(/Vehicle|Vehículo/);
 });
 
 test('Vehicle card shows color, plate, VIN last-4 and purchase date', async ({ page }) => {

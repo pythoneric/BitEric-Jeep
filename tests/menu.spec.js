@@ -1,19 +1,19 @@
 import { test, expect } from '@playwright/test';
 import { startFresh, switchTab } from './helpers.js';
 
-const TAB_NAMES = ['Dashboard', 'Maintenance', 'Fuel', 'Mods', 'Trails', 'Parts', 'Docs', 'Settings'];
+const TAB_NAMES = ['Dashboard', 'Maintenance', 'Fuel', 'Mods', 'Tires', 'Trails', 'Parts', 'Docs', 'Settings'];
 
-test('all eight tabs are rendered on desktop', async ({ page }) => {
+test('all nine tabs are rendered on desktop', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await startFresh(page);
   const tabs = page.locator('nav.tabs .tab');
-  await expect(tabs).toHaveCount(8);
+  await expect(tabs).toHaveCount(9);
   for (const name of TAB_NAMES) {
     await expect(tabs.filter({ hasText: name })).toHaveCount(1);
   }
 });
 
-test('all eight tabs remain on-screen at narrow (mobile) widths', async ({ page }) => {
+test('all nine tabs remain on-screen at narrow (mobile) widths', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 });
   await startFresh(page);
   const tabs = await page.locator('.tab').evaluateAll((els) =>
@@ -22,7 +22,7 @@ test('all eight tabs remain on-screen at narrow (mobile) widths', async ({ page 
       return { right: r.right, visible: e.offsetParent !== null };
     }),
   );
-  expect(tabs).toHaveLength(8);
+  expect(tabs).toHaveLength(9);
   // Every tab must fit in the viewport so users can see all sections
   // without horizontal scrolling (regression for the min-width: 100px bug).
   for (const t of tabs) {
@@ -33,18 +33,18 @@ test('all eight tabs remain on-screen at narrow (mobile) widths', async ({ page 
 
 test('clicking each tab switches the visible section', async ({ page }) => {
   await startFresh(page);
-  for (const tab of ['maintenance', 'fuel', 'mods', 'trails', 'parts', 'docs', 'settings', 'dashboard']) {
+  for (const tab of ['maintenance', 'fuel', 'mods', 'tires', 'trails', 'parts', 'docs', 'settings', 'dashboard']) {
     await switchTab(page, tab);
     await expect(page.locator(`#${tab}`)).toBeVisible();
     await expect(page.locator(`[data-tab="${tab}"]`)).toHaveClass(/active/);
   }
 });
 
-test('keyboard shortcuts 1-8 switch tabs', async ({ page }) => {
+test('keyboard shortcuts 1-9 switch tabs', async ({ page }) => {
   await startFresh(page);
   await page.locator('body').click({ position: { x: 1, y: 1 } });
-  const expected = ['dashboard', 'maintenance', 'fuel', 'mods', 'trails', 'parts', 'docs', 'settings'];
-  for (let i = 0; i < 8; i++) {
+  const expected = ['dashboard', 'maintenance', 'fuel', 'mods', 'tires', 'trails', 'parts', 'docs', 'settings'];
+  for (let i = 0; i < 9; i++) {
     await page.keyboard.press(String(i + 1));
     await expect(page.locator(`[data-tab="${expected[i]}"]`)).toHaveClass(/active/);
   }
