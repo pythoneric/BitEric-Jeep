@@ -133,6 +133,34 @@
     .flag-icon { display: inline-flex; width: 1.2rem; height: 0.85rem; border-radius: 2px; overflow: hidden; box-shadow: 0 0 0 1px rgba(0,0,0,0.3); flex-shrink: 0; }
     .flag-icon svg { display: block; width: 100%; height: 100%; }
     .severe-service-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+    /* Two-label toggle switch for Shop/DIY. Storage stays a checkbox (checked
+       = Shop, unchecked = DIY) so #mShop / #modShop IDs don't move — only the
+       render is a segmented pill. Visual order via `order` puts DIY left of
+       the knob and Shop right so the knob's position lines up with the label.
+       Label inside a <label> means clicking anywhere in the row toggles. */
+    .toggle-segment { display: inline-flex; align-items: center; gap: 0.6rem; cursor: pointer; user-select: none; font-size: 0.9rem; }
+    .toggle-segment input[type=checkbox] {
+      appearance: none; -webkit-appearance: none;
+      width: 2.5rem; height: 1.4rem; margin: 0; padding: 0;
+      background: var(--border); border-radius: 999px; border: 0;
+      position: relative; cursor: pointer; transition: background 0.15s;
+      flex-shrink: 0; order: 2;
+    }
+    .toggle-segment input[type=checkbox]::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 1rem; height: 1rem; border-radius: 50%;
+      background: #fff; transition: left 0.15s;
+    }
+    .toggle-segment input[type=checkbox]:checked { background: var(--accent); }
+    .toggle-segment input[type=checkbox]:checked::after { left: calc(100% - 1rem - 2px); }
+    body.light .toggle-segment input[type=checkbox] { background: var(--light-border); }
+    body.light .toggle-segment input[type=checkbox]:checked { background: var(--light-accent); }
+    .toggle-segment .toggle-off { order: 1; color: var(--muted); }
+    .toggle-segment .toggle-on  { order: 3; color: var(--muted); }
+    .toggle-segment input:not(:checked) ~ .toggle-off { color: var(--text); font-weight: 600; }
+    .toggle-segment input:checked ~ .toggle-on        { color: var(--text); font-weight: 600; }
+    body.light .toggle-segment input:not(:checked) ~ .toggle-off { color: var(--light-text); }
+    body.light .toggle-segment input:checked ~ .toggle-on        { color: var(--light-text); }
     .severe-service-badge { display: inline-block; background: #dc2626; color: white; font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 0.25rem; margin-left: 0.5rem; letter-spacing: 0.05em; text-transform: uppercase; vertical-align: middle; }
     .low-stock-badge { display: inline-block; background: #dc2626; color: white; font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 0.25rem; margin-left: 0.5rem; letter-spacing: 0.05em; text-transform: uppercase; vertical-align: middle; }
     .trail-conditions { border: 1px solid var(--border); border-radius: 0.4rem; padding: 0.5rem; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
@@ -496,7 +524,7 @@
             </optgroup>
           </select>
           <input type="text" id="mOtherType" class="hidden" data-i18n-placeholder="phOtherType" placeholder="Specify if Other">
-          <label><input type="checkbox" id="mShop"> <span data-i18n="shop">Shop</span> (<span data-i18n="diy">DIY</span>)</label>
+          <label class="toggle-segment"><input type="checkbox" id="mShop"><span class="toggle-off" data-i18n="diy">DIY</span><span class="toggle-on" data-i18n="shop">Shop</span></label>
           <input type="number" step="0.01" id="mCost" min="0" data-i18n-placeholder="phCostUsd" placeholder="Cost (USD)">
           <textarea id="mNotes" data-i18n-placeholder="phNotes" placeholder="Notes"></textarea>
           <details class="interval-details">
@@ -621,7 +649,7 @@
           <input type="text" id="modPart" data-i18n-placeholder="phPartName" placeholder="Part Name" required>
           <input type="text" id="modBrand" data-i18n-placeholder="phPartBrand" placeholder="Brand">
           <input type="number" step="0.01" id="modCost" min="0" data-i18n-placeholder="phCostUsd" placeholder="Cost (USD)">
-          <label><input type="checkbox" id="modShop"> <span data-i18n="shop">Shop</span> (<span data-i18n="diy">DIY</span>)</label>
+          <label class="toggle-segment"><input type="checkbox" id="modShop"><span class="toggle-off" data-i18n="diy">DIY</span><span class="toggle-on" data-i18n="shop">Shop</span></label>
           <textarea id="modNotes" data-i18n-placeholder="phNotes" placeholder="Notes"></textarea>
           <label><input type="checkbox" id="modInstalled" checked> <span data-i18n="stillInstalled">Still Installed</span></label>
           <input type="date" id="modRemovedDate" class="hidden" data-i18n-placeholder="removedOn" placeholder="Removed on">
