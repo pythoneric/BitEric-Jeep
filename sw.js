@@ -4,7 +4,7 @@
 // when online AND writes the response back into the cache on every successful
 // local fetch, so an offline reopen after a deploy lands on the latest version
 // the user has seen — not whatever was frozen at install time.
-const CACHE_NAME = 'biteric-jeep-v2';
+const CACHE_NAME = 'biteric-jeep-v3';
 
 const urlsToCache = [
   'jeep.html',
